@@ -133,6 +133,32 @@ export interface GeneratorsResponse { generators: GeneratorId[]; }
 export interface LibraryResponse { organs: OrganInfo[]; }
 export interface GalleryResponse { scenes: GallerySummary[]; }
 
+// ---- live + interactive (advanced) ----
+export interface SessionEntry {  // one row of the cross-examine history
+  index: number; phase: Phase; params: Record<string, number>;
+  margins: Record<string, number>; cohesion: number; weakest: string;
+  note: string; converged: boolean;
+}
+export interface SessionState {
+  generator: GeneratorId; seed: number;
+  params: Record<string, number>; palette: string[];
+  margins: Record<string, number>; cohesion: number; weakest: string;
+  converged: boolean; steps: number; history: SessionEntry[];
+}
+export interface SessionCreated { session_id: string; state: SessionState; }
+export interface SessionStepResponse { session_id: string; step: SessionEntry; state: SessionState; }
+export interface Explanation {
+  axis: string; score: number; kind: string; tag: VerdictTag;
+  cohesion: number; why: string; all_margins: Record<string, number>;
+}
+export interface FilmstripFrame {
+  index: number; phase: Phase; params: Record<string, number>;
+  margins: Record<string, number>; score: number; weakest: string;
+}
+export interface Filmstrip {
+  scene_id: string; generator: string; palette: string[]; frames: FilmstripFrame[];
+}
+
 // Endpoints:
 //   GET  /health                -> Health
 //   GET  /generators            -> GeneratorsResponse
@@ -140,4 +166,11 @@ export interface GalleryResponse { scenes: GallerySummary[]; }
 //   GET  /gallery               -> GalleryResponse
 //   POST /simulate (SimulateRequest) -> Scene
 //   GET  /scene/{id}            -> Scene
+//   GET  /scene/{id}/filmstrip  -> Filmstrip
 //   GET  /audio/{id}.wav        -> audio/wav (binary)
+//   GET  /simulate/stream       -> SSE; 'step' events = Step, 'scene' = Scene, then 'done'
+//   POST /session (SimulateRequest)        -> SessionCreated
+//   POST /session/{id}/step                -> SessionStepResponse
+//   POST /session/{id}/inject {params}     -> SessionStepResponse
+//   GET  /session/{id}/explain?axis=       -> Explanation
+//   GET  /session/{id}                     -> SessionState

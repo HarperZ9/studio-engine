@@ -236,9 +236,11 @@ def generators() -> list[str]:
     return list(_gens().keys())
 
 
-def simulate(seed: int = 0, generator: str = "phyllotaxis", max_steps: int = 16,
-             target: float = 0.9, floor: float = 0.6, scheme: str = "analogous",
-             corpus_path: str | Path | None = _CORPUS_PATH) -> Scene:
+def run(seed: int = 0, generator: str = "phyllotaxis", max_steps: int = 16,
+        target: float = 0.9, floor: float = 0.6, scheme: str = "analogous",
+        corpus_path: str | Path | None = _CORPUS_PATH):
+    """Generator form: yields ('step', Step) per iteration, then ('scene', Scene).
+    Powers live streaming + interactive sessions; simulate() is the collected form."""
     gens = _gens()
     if generator not in gens:
         raise ValueError(f"unknown generator {generator!r}; have {list(gens)}")
@@ -260,6 +262,7 @@ def simulate(seed: int = 0, generator: str = "phyllotaxis", max_steps: int = 16,
              for ax, s in margins.items()],
             round(coh, 4), {ax: round(s, 4) for ax, s in margins.items()}, weakest,
             f"cohesion={coh:.4f}; weakest={weakest}={margins[weakest]:.3f}"))
+        yield ("step", steps[-1])
         if best is None or coh > best[0]:
             best = (coh, dict(params), feats, margins)
         if coh >= target and all(s >= floor for s in margins.values()):
@@ -295,6 +298,7 @@ def simulate(seed: int = 0, generator: str = "phyllotaxis", max_steps: int = 16,
     steps.append(Step(len(steps), "witness", {p: round(v, 4) for p, v in params.items()},
                       score=round(coh, 4), margins={a: round(v, 4) for a, v in margins.items()},
                       note="accepted" if converged else "best-effort (unconverged)"))
+    yield ("step", steps[-1])
     traj = Trajectory(steps, accepted_index=len(steps) - 1, converged=converged)
 
     corpus.add(feats)  # ground future novelty in what we just made
@@ -303,5 +307,17 @@ def simulate(seed: int = 0, generator: str = "phyllotaxis", max_steps: int = 16,
     if spec["points"]:
         organ_ids.append("raster.png")
     receipt = Receipt(sid, seed, organ_ids, artifact_shas, round(coh, 4))
-    return Scene(id=sid, title=f"{generator.title()} #{seed}", layers=layers,
-                 audio=audio, trajectory=traj, receipt=receipt, palette=palette)
+    yield ("scene", Scene(id=sid, title=f"{generator.title()} #{seed}", layers=layers,
+                          audio=audio, trajectory=traj, receipt=receipt, palette=palette))
+
+
+def simulate(seed: int = 0, generator: str = "phyllotaxis", max_steps: int = 16,
+             target: float = 0.9, floor: float = 0.6, scheme: str = "analogous",
+             corpus_path: str | Path | None = _CORPUS_PATH) -> Scene:
+    """Collected form of run() — the full witnessed Scene."""
+    scene: Scene | None = None
+    for _kind, _obj in run(seed, generator, max_steps, target, floor, scheme, corpus_path):
+        if _kind == "scene":
+            scene = _obj  # type: ignore[assignment]
+    assert scene is not None
+    return scene

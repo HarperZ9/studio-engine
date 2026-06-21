@@ -55,4 +55,20 @@ The baked WAV sonification of scene `{id}` (`Content-Type: audio/wav`). Or synth
 browser from `scene.audio` (`audio_params`). `404` if the scene isn't cached.
 
 **Errors** are `{ "error": "...", "path"?: "..." }` with HTTP `400`/`404`.
-**Determinism:** identical `(seed, generator, scheme)` → identical `scene.id` and artifact `sha256`s.
+**Determinism:** identical `(seed, generator, scheme)` → identical `scene.id` and artifact `sha256`s (for a fixed corpus; novelty is intentionally path-dependent).
+
+## Live & interactive (advanced)
+
+| Method | Path | Body | → |
+|---|---|---|---|
+| GET | `/simulate/stream?seed=&generator=&scheme=` | — | **SSE**: `event: step` ×N, then `event: scene`, then `event: done` |
+| GET | `/scene/{id}/filmstrip` | — | `{scene_id, generator, palette, frames:[{index,phase,params,margins,score,weakest}]}` |
+| POST | `/session` | `{seed,generator,scheme}` | `{session_id, state}` |
+| POST | `/session/{id}/step` | — | `{session_id, step, state}` — auto-refine one iteration |
+| POST | `/session/{id}/inject` | `{params:{...}}` | `{session_id, step, state}` — operator steers parameters |
+| GET | `/session/{id}/explain?axis=` | — | `{axis, score, kind, tag, cohesion, why, all_margins}` |
+| GET | `/session/{id}` | — | session `state` (incl. `history`) |
+
+- **SSE** — consume `/simulate/stream` with `EventSource`; each `step` event is a `Step` (params + margins + cohesion). Render the convergence live (the "watch it think" telos).
+- **Filmstrip** — per-step params/margins for replaying/animating a finished scene's convergence.
+- **Sessions** — the two-way cross-examine: `step` to auto-refine, `inject` to steer a parameter, `explain` to ask why an axis scores what it does; `state.history` is the witnessed exchange.
