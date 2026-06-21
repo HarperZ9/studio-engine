@@ -4,37 +4,41 @@
       "id": "geometry.phyllotaxis",
       "name": "Phyllotaxis",
       "kind": "generator",
-      "summary": "Vogel-model spiral; golden-angle packing.",
+      "summary": "Vogel spiral; params angle/scale/dot.",
       "params_schema": {
-        "angle_deg": "float"
+        "angle": "float",
+        "scale": "float",
+        "dot": "float"
       },
-      "lineage": "coherence-membrane contour/SVG + phyllotaxis"
+      "lineage": "coherence-membrane contour/SVG"
     },
     {
       "id": "fields.gyroid",
       "name": "Gyroid field",
       "kind": "generator",
-      "summary": "2D slice of the gyroid implicit surface.",
+      "summary": "Gyroid implicit slice.",
       "params_schema": {
-        "freq": "float"
+        "freq": "float",
+        "z": "float"
       },
-      "lineage": "sensory-transform-algebra Field plane"
+      "lineage": "sensory-transform-algebra Field"
     },
     {
       "id": "fields.quasicrystal",
       "name": "Quasicrystal",
       "kind": "generator",
-      "summary": "Sum of plane waves; aperiodic interference.",
+      "summary": "Plane-wave interference.",
       "params_schema": {
-        "waves": "int"
+        "waves": "int",
+        "scale": "float"
       },
-      "lineage": "sensory-transform-algebra Field plane"
+      "lineage": "sensory-transform-algebra Field"
     },
     {
       "id": "palette.oklch",
       "name": "OKLCh palette",
       "kind": "generator",
-      "summary": "Perceptually-even color ramp from a seed.",
+      "summary": "Perceptual color ramp.",
       "params_schema": {
         "scheme": "str"
       },
@@ -42,47 +46,39 @@
     },
     {
       "id": "raster.png",
-      "name": "Native PNG render",
+      "name": "Native PNG",
       "kind": "compositor",
-      "summary": "Zero-dep PNG raster of a point field (zlib only).",
+      "summary": "Zero-dep PNG raster.",
       "params_schema": {
         "size": "int"
       },
-      "lineage": "raw eye.raw_rendering (rasterization)"
+      "lineage": "raw eye"
     },
     {
       "id": "sonify.params",
       "name": "Sonifier",
       "kind": "sonifier",
-      "summary": "Maps the refine trajectory + palette to live Web-Audio params (and WAV).",
+      "summary": "Trajectory + palette -> Web-Audio params + WAV.",
       "params_schema": {
         "duration": "float"
       },
-      "lineage": "creativity-invention sensory algebra"
+      "lineage": "creativity sensory algebra"
     },
     {
-      "id": "criterion.golden_angle",
-      "name": "Golden-angle fitness",
+      "id": "criteria.multi_axis",
+      "name": "Multi-axis cohesion",
       "kind": "criterion",
-      "summary": "Packing vs the golden angle \u2014 a criterion the generator didn't author.",
+      "summary": "Harmonic-mean of structural + aesthetic margins; converge only when correct on every axis.",
       "params_schema": {},
-      "lineage": ""
+      "lineage": "refine primitive"
     },
     {
-      "id": "criterion.gyroid_symmetry",
-      "name": "Gyroid symmetry",
+      "id": "criteria.novelty",
+      "name": "Novelty vs corpus",
       "kind": "criterion",
-      "summary": "Clean tiling (integer frequency).",
+      "summary": "Distance from prior work in feature space; grounds creativity (novel AND structured).",
       "params_schema": {},
-      "lineage": ""
-    },
-    {
-      "id": "criterion.quasicrystal_order",
-      "name": "Quasicrystal order",
-      "kind": "criterion",
-      "summary": "5-fold aperiodic order.",
-      "params_schema": {},
-      "lineage": ""
+      "lineage": "single-thread-reconcile binding #1"
     }
   ]
 }

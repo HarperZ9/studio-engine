@@ -56,12 +56,14 @@ class Verdict:
 
 @dataclass
 class Step:
-    """One iteration of the loop: what was generated, how it scored, what changed."""
+    """One iteration of the loop: candidate params, per-axis margins, cohesion, what changed."""
     index: int
     phase: Literal["perceive", "generate", "critique", "refine", "witness"]
     params: dict[str, Any]
     verdicts: list[Verdict] = field(default_factory=list)
-    score: float = 0.0
+    score: float = 0.0                 # cohesion (harmonic mean of the axis margins)
+    margins: dict[str, float] = field(default_factory=dict)  # per-axis scores 0..1
+    weakest: str = ""                  # the axis the next refine step reflected on
     note: str = ""
 
 

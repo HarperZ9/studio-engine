@@ -32,6 +32,22 @@ The engine generates art, judges it against a criterion it did *not* author, ref
 
 Theme everything from `scene.palette` (hex).
 
+## 2b. The loop is multi-axis (advanced)
+
+Each candidate is judged on several criteria at once — **structural** (golden-angle / clean
+frequency / 5-fold order), **aesthetic** (balance, coverage, contrast, complexity), and
+**novelty** (distance from everything the engine has made) — combined by **cohesion** (harmonic
+mean, so one weak axis tanks the score). On each `step`: `margins` is the per-axis 0..1 map,
+`score` is the cohesion, `weakest` is the axis the next step reflected on. **Plot `margins`
+across `trajectory.steps`** (radar / parallel-coords that tightens as it refines) — the chamber's
+reasoning made visible, the two-way "watch it think."
+
+`trajectory.converged` is `true` only when cohesion ≥ target **and every axis ≥ floor** — CORRECT
+on every axis, not good-on-average; an unconverged scene is honest best-effort (its `weakest` axis
+says why). **Novelty is intentionally path-dependent:** the backend grounds it against a persistent
+corpus, so repeated `/simulate` calls don't repeat outputs (novelty drops, the refine diverges) —
+a living gallery. Determinism holds for a fixed corpus; disable the corpus for fully reproducible runs.
+
 ## 3. Rendering the `params` layer live (the gorgeous path)
 
 `RenderParams.generator` tells you which to draw; the parameter is the converged value:
