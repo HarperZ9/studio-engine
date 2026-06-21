@@ -1,0 +1,88 @@
+{
+  "organs": [
+    {
+      "id": "geometry.phyllotaxis",
+      "name": "Phyllotaxis",
+      "kind": "generator",
+      "summary": "Vogel-model spiral; golden-angle packing.",
+      "params_schema": {
+        "angle_deg": "float"
+      },
+      "lineage": "coherence-membrane contour/SVG + phyllotaxis"
+    },
+    {
+      "id": "fields.gyroid",
+      "name": "Gyroid field",
+      "kind": "generator",
+      "summary": "2D slice of the gyroid implicit surface.",
+      "params_schema": {
+        "freq": "float"
+      },
+      "lineage": "sensory-transform-algebra Field plane"
+    },
+    {
+      "id": "fields.quasicrystal",
+      "name": "Quasicrystal",
+      "kind": "generator",
+      "summary": "Sum of plane waves; aperiodic interference.",
+      "params_schema": {
+        "waves": "int"
+      },
+      "lineage": "sensory-transform-algebra Field plane"
+    },
+    {
+      "id": "palette.oklch",
+      "name": "OKLCh palette",
+      "kind": "generator",
+      "summary": "Perceptually-even color ramp from a seed.",
+      "params_schema": {
+        "scheme": "str"
+      },
+      "lineage": "coherence-membrane color/OKLab"
+    },
+    {
+      "id": "raster.png",
+      "name": "Native PNG render",
+      "kind": "compositor",
+      "summary": "Zero-dep PNG raster of a point field (zlib only).",
+      "params_schema": {
+        "size": "int"
+      },
+      "lineage": "raw eye.raw_rendering (rasterization)"
+    },
+    {
+      "id": "sonify.params",
+      "name": "Sonifier",
+      "kind": "sonifier",
+      "summary": "Maps the refine trajectory + palette to live Web-Audio params (and WAV).",
+      "params_schema": {
+        "duration": "float"
+      },
+      "lineage": "creativity-invention sensory algebra"
+    },
+    {
+      "id": "criterion.golden_angle",
+      "name": "Golden-angle fitness",
+      "kind": "criterion",
+      "summary": "Packing vs the golden angle \u2014 a criterion the generator didn't author.",
+      "params_schema": {},
+      "lineage": ""
+    },
+    {
+      "id": "criterion.gyroid_symmetry",
+      "name": "Gyroid symmetry",
+      "kind": "criterion",
+      "summary": "Clean tiling (integer frequency).",
+      "params_schema": {},
+      "lineage": ""
+    },
+    {
+      "id": "criterion.quasicrystal_order",
+      "name": "Quasicrystal order",
+      "kind": "criterion",
+      "summary": "5-fold aperiodic order.",
+      "params_schema": {},
+      "lineage": ""
+    }
+  ]
+}
