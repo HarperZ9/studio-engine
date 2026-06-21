@@ -15,12 +15,24 @@ from pathlib import Path
 from typing import Any
 
 from .model import (Artifact, Verdict, Step, Trajectory, Receipt, Scene, SceneLayer, OrganInfo, _sha)
-from .organs import geometry as geo, palette as pal, fields as fld, raster as ras, sonify as snd
+from .organs import (geometry as geo, palette as pal, fields as fld, raster as ras, sonify as snd,
+                     attractor as att, harmonograph as harm, flowfield as flow,
+                     metaballs as mb, turbulence as turb)
 from . import criteria as crit
 from .corpus import Corpus
 
 _CORPUS_PATH = Path(__file__).resolve().parent / "_corpus.json"
 _G = 20  # feature grid resolution
+
+
+def _init(p0: dict, bounds: dict, rng: int) -> dict:
+    """Seed a rough-draft parameter vector: each param perturbed around its base, in bounds."""
+    out: dict[str, float] = {}
+    for i, (k, (lo, hi)) in enumerate(bounds.items()):
+        base = float(p0.get(k, (lo + hi) / 2))
+        frac = (((rng >> (i * 5)) % 1000) / 1000.0 - 0.5)  # -0.5..0.5
+        out[k] = max(lo, min(hi, base + frac * (hi - lo) * 0.6))
+    return out
 
 
 def _gens() -> dict[str, dict[str, Any]]:
@@ -55,6 +67,34 @@ def _gens() -> dict[str, dict[str, Any]]:
                 math.cos(math.cos(2 * math.pi * k / max(1, int(round(p["waves"]))) ) * u * p["scale"]
                          + math.sin(2 * math.pi * k / max(1, int(round(p["waves"]))) ) * v * p["scale"])
                 for k in range(max(1, int(round(p["waves"]))))),
+        },
+        "attractor": {
+            "params0": lambda rng: _init(att.PARAMS0, att.BOUNDS, rng), "bounds": att.BOUNDS,
+            "axes": ["balance", "coverage", "complexity"],
+            "render": lambda p, pl: att.svg(p, pl), "points": lambda p: att.points(p), "field": None,
+        },
+        "harmonograph": {
+            "params0": lambda rng: _init(harm.PARAMS0, harm.BOUNDS, rng), "bounds": harm.BOUNDS,
+            "axes": ["balance", "coverage", "complexity"],
+            "render": lambda p, pl: harm.svg(p, pl), "points": lambda p: harm.points(p), "field": None,
+        },
+        "flowfield": {
+            "params0": lambda rng: _init(flow.PARAMS0, flow.BOUNDS, rng), "bounds": flow.BOUNDS,
+            "axes": ["contrast", "complexity"],
+            "render": lambda p, pl: flow.svg(p, pl, samples=64), "points": None,
+            "field": lambda p, u, v: flow.value(p, u, v),
+        },
+        "metaballs": {
+            "params0": lambda rng: _init(mb.PARAMS0, mb.BOUNDS, rng), "bounds": mb.BOUNDS,
+            "axes": ["contrast", "complexity"],
+            "render": lambda p, pl: mb.svg(p, pl, samples=64), "points": None,
+            "field": lambda p, u, v: mb.value(p, u, v),
+        },
+        "turbulence": {
+            "params0": lambda rng: _init(turb.PARAMS0, turb.BOUNDS, rng), "bounds": turb.BOUNDS,
+            "axes": ["contrast", "complexity"],
+            "render": lambda p, pl: turb.svg(p, pl, samples=64), "points": None,
+            "field": lambda p, u, v: turb.value(p, u, v),
         },
     }
 
@@ -168,6 +208,16 @@ def library() -> list[OrganInfo]:
                   {"freq": "float", "z": "float"}, "sensory-transform-algebra Field"),
         OrganInfo("fields.quasicrystal", "Quasicrystal", "generator", "Plane-wave interference.",
                   {"waves": "int", "scale": "float"}, "sensory-transform-algebra Field"),
+        OrganInfo("attractor.dejong", "de Jong attractor", "generator", "Strange-attractor point cloud.",
+                  {"a": "float", "b": "float", "c": "float", "d": "float"}, "dynamical systems"),
+        OrganInfo("harmonograph", "Harmonograph", "generator", "Damped-Lissajous curve.",
+                  {"f1": "float", "f2": "float", "f3": "float", "f4": "float"}, "harmonic motion"),
+        OrganInfo("flowfield", "Flow field", "generator", "Domain-warped curl flow.",
+                  {"scale": "float", "warp": "float"}, "sensory-transform-algebra Field"),
+        OrganInfo("metaballs", "Metaballs", "generator", "Distance-field potential.",
+                  {"count": "int", "spread": "float", "falloff": "float"}, "implicit surfaces"),
+        OrganInfo("turbulence", "Turbulence (fBm)", "generator", "Fractal sinusoidal turbulence.",
+                  {"freq": "float", "octaves": "int", "gain": "float"}, "fractal noise"),
         OrganInfo("palette.oklch", "OKLCh palette", "generator", "Perceptual color ramp.",
                   {"scheme": "str"}, "coherence-membrane color/OKLab"),
         OrganInfo("raster.png", "Native PNG", "compositor", "Zero-dep PNG raster.", {"size": "int"}, "raw eye"),
