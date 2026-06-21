@@ -26,13 +26,15 @@ export interface Verdict {
   detail: string;
 }
 
-/** One iteration of the loop: params tried, how it scored, the verdicts. */
+/** One iteration of the loop: params tried, per-axis margins, cohesion, the weakest axis. */
 export interface Step {
   index: number;
   phase: Phase;
   params: Record<string, number | string>;
-  verdicts: Verdict[];
-  score: number;
+  verdicts: Verdict[];        // one per axis (incl. "novelty")
+  score: number;              // cohesion = harmonic mean of the margins
+  margins: Record<string, number>; // per-axis scores 0..1 — plot these as the convergence
+  weakest: string;            // axis the next refine reflected on
   note: string;
 }
 
@@ -89,14 +91,12 @@ export interface OrganInfo {
 /** The `params` layer's artifact.content (kind "data"), JSON-parsed: render this LIVE. */
 export interface RenderParams {
   generator: GeneratorId;
+  params: Record<string, number>; // the converged vector: {angle,scale,dot} | {freq,z} | {waves,scale}
   palette: string[];
-  criterion: string;
-  scores: number[];
+  margins: Record<string, number>; // final per-axis scores (structural + aesthetic + novelty)
+  cohesion: number;               // 0..1, harmonic mean of margins
+  scores: number[];               // cohesion per refine step (for an animated convergence)
   converged: boolean;
-  // plus the generator's parameter, one of:
-  angle_deg?: number; // phyllotaxis
-  freq?: number;      // gyroid
-  waves?: number;     // quasicrystal
 }
 
 /** The `audio` artifact.content (kind "audio_params"), JSON-parsed: drive Web Audio. */
