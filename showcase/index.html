@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Shared Frame — one frame, two witnesses, one re-checkable verdict</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Schibsted+Grotesk:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#0d1b1c; --void-2:#0f2122; --bone:#e9e2d0; --orange:#df5e00; --ember:#efab30;
+    --prussian:#476762; --muted:#8a9b92; --hairline:rgba(239,171,48,.15);
+    --verified:#7fcf9b; --refuted:#df5e00; --unverifiable:#8a9b92;
+    --serif:"EB Garamond",Georgia,serif; --disp:"Schibsted Grotesk",system-ui,sans-serif;
+    --mono:"Spline Sans Mono",ui-monospace,monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:radial-gradient(120% 90% at 50% -10%,var(--void-2),var(--void) 60%);
+    color:var(--bone);font-family:var(--serif);line-height:1.6;
+    -webkit-font-smoothing:antialiased;padding:clamp(1.2rem,3vw,2.6rem)}
+  .wrap{max-width:1240px;margin:0 auto}
+  header.top{text-align:center;margin:1rem auto 2.4rem;max-width:46rem}
+  .eyebrow{font-family:var(--mono);font-size:.62rem;letter-spacing:.34em;text-transform:uppercase;
+    color:var(--ember);opacity:.85;margin-bottom:1rem}
+  h1{font-family:var(--disp);font-weight:700;letter-spacing:-.01em;
+    font-size:clamp(2rem,4.6vw,3.3rem);line-height:1.04;margin:.2rem 0 .7rem}
+  .lede{font-size:clamp(1.05rem,1.5vw,1.25rem);color:#d7cfba}
+  .lede em{color:var(--ember);font-style:italic}
+
+  /* ---- the dual aperture ---- */
+  .frame-row{display:grid;gap:clamp(1rem,2vw,1.6rem);align-items:stretch;
+    grid-template-columns:1fr minmax(260px,0.92fr) 1fr}
+  .panel{border:1px solid var(--hairline);border-radius:14px;background:rgba(15,33,34,.55);
+    padding:1.1rem 1.15rem;min-width:0;backdrop-filter:blur(2px)}
+  .panel h2{font-family:var(--disp);font-weight:600;font-size:.82rem;letter-spacing:.02em;margin:0 0 .15rem}
+  .panel .sub{font-family:var(--mono);font-size:.56rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:.85rem}
+
+  /* human eye */
+  .eye-human .stage{position:relative;aspect-ratio:1/1;width:100%;border-radius:10px;overflow:hidden;
+    background:#000;border:1px solid rgba(0,0,0,.4)}
+  .eye-human .stage .render-canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .eye-human .stage .svgwrap{position:absolute;inset:0}
+  .eye-human .stage .svgwrap svg{width:100%;height:100%}
+  .swatches{display:flex;gap:4px;margin-top:.7rem}
+  .swatches i{flex:1;height:7px;border-radius:2px}
+  .badge{font-family:var(--mono);font-size:.58rem;color:var(--muted);margin-top:.55rem;letter-spacing:.04em}
+
+  /* model eye */
+  .meye .block{margin-bottom:.95rem}
+  .meye .label{font-family:var(--mono);font-size:.55rem;letter-spacing:.18em;text-transform:uppercase;color:var(--prussian);margin-bottom:.4rem}
+  .kv{display:flex;justify-content:space-between;gap:.6rem;font-family:var(--mono);font-size:.66rem;padding:.12rem 0;border-bottom:1px dotted rgba(138,155,146,.14)}
+  .kv .k{color:var(--muted)} .kv .v{color:var(--bone)}
+  .axis{display:grid;grid-template-columns:5.6rem 1fr 2.7rem;align-items:center;gap:.5rem;margin:.28rem 0;font-family:var(--mono);font-size:.6rem}
+  .axis .name{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .axis.weak .name{color:var(--ember)}
+  .axis .bar{height:5px;border-radius:3px;background:rgba(138,155,146,.16);overflow:hidden}
+  .axis .fill{display:block;height:100%;background:linear-gradient(90deg,var(--prussian),var(--orange))}
+  .axis.weak .fill{background:linear-gradient(90deg,var(--orange),var(--ember))}
+  .axis .val{text-align:right;color:var(--bone)}
+  .traj{max-height:168px;overflow:auto;border:1px solid var(--hairline);border-radius:8px;padding:.4rem .5rem;background:rgba(0,0,0,.18)}
+  .tstep{display:grid;grid-template-columns:1.5rem 4.2rem 1fr 2.6rem 4rem;align-items:center;gap:.4rem;font-family:var(--mono);font-size:.55rem;color:var(--muted);padding:.1rem 0}
+  .tstep .tp{color:var(--prussian)} .tstep .tc{color:var(--bone);text-align:right} .tstep .tw{color:var(--ember);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tbar{height:4px;border-radius:2px;background:rgba(138,155,146,.14);overflow:hidden}
+  .tfill{display:block;height:100%;background:var(--prussian)}
+
+  /* ---- the binding (certificate) ---- */
+  .binding{display:flex;flex-direction:column;justify-content:center}
+  .binding .panel{border-color:rgba(239,171,48,.32);
+    background:linear-gradient(180deg,rgba(20,40,40,.7),rgba(15,33,34,.5));
+    box-shadow:0 0 0 1px rgba(239,171,48,.05),0 18px 50px -28px rgba(223,94,0,.55)}
+  .cert .ctitle{font-family:var(--mono);font-weight:500;font-size:.55rem;letter-spacing:.2em;text-transform:uppercase;color:var(--ember);margin:.1rem 0 .6rem}
+  .cert .claim{font-family:var(--serif);font-size:.94rem;color:var(--bone);margin:.1rem 0 .9rem;line-height:1.45}
+  .cert .row{display:flex;justify-content:space-between;align-items:baseline;gap:.6rem;font-family:var(--mono);font-size:.62rem;padding:.3rem 0;border-top:1px solid rgba(239,171,48,.12)}
+  .cert .row .rk{color:var(--muted);letter-spacing:.06em}
+  .cert .row .rv{color:var(--bone);text-align:right;word-break:break-all}
+  .tag{display:inline-block;font-family:var(--mono);font-size:.62rem;font-weight:500;letter-spacing:.08em;
+    text-transform:uppercase;padding:.18em .6em;border-radius:999px;border:1px solid currentColor}
+  .tag.verified{color:var(--verified)} .tag.refuted{color:var(--refuted)} .tag.unverifiable{color:var(--unverifiable)}
+  .cert .evidence{margin-top:.5rem}
+  .cert .ev{display:flex;justify-content:space-between;gap:.6rem;font-family:var(--mono);font-size:.58rem;color:var(--muted);padding:.16rem 0}
+  .cert .ev .ek{color:var(--prussian)} .cert .ev .ev-v{color:var(--bone);word-break:break-all;text-align:right}
+  .conn{text-align:center;font-family:var(--mono);font-size:.5rem;letter-spacing:.18em;color:var(--prussian);text-transform:uppercase;margin:.55rem 0 0}
+
+  /* ---- controls + narrative (wired in later increments) ---- */
+  #controls{margin:2rem auto 0;max-width:60rem}
+  .narrative{max-width:42rem;margin:2.6rem auto 1rem;color:#cfc7b3;font-size:1.05rem}
+  .status{position:fixed;left:-9999px}
+  footer{text-align:center;margin-top:3rem;font-family:var(--mono);font-size:.56rem;letter-spacing:.1em;color:var(--muted)}
+  footer a{color:var(--prussian)}
+
+  @media (max-width:880px){ .frame-row{grid-template-columns:1fr} .binding{order:3} }
+  @media (prefers-reduced-motion:reduce){ html{scroll-behavior:auto} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="eyebrow">A demonstration · studio-engine × coherence-membrane</div>
+    <h1>The Shared Frame</h1>
+    <p class="lede">One frame. Two witnesses look at it through their own apertures —
+      you see an <em>image</em>, the model sees <em>structure</em>. Between you sits a verdict
+      neither of you authored, and one you can <em>re-check yourself</em>.</p>
+  </header>
+
+  <main class="frame-row">
+
+    <!-- YOUR EYE -->
+    <section class="panel eye-human" aria-labelledby="h-human">
+      <h2 id="h-human">Your eye</h2>
+      <div class="sub">the frame, as an image</div>
+      <div class="stage" id="stage" role="img" aria-label="Loading the frame…" aria-busy="true"></div>
+      <div class="swatches" id="swatches" aria-hidden="true"></div>
+      <div class="badge" id="badge"></div>
+    </section>
+
+    <!-- THE BINDING -->
+    <section class="binding" aria-labelledby="h-bind">
+      <div class="panel cert" id="cert">
+        <h2 class="ctitle" id="h-bind">The binding · certificate</h2>
+        <p class="claim" id="cert-claim">—</p>
+        <div class="row"><span class="rk">verdict</span><span class="rv"><span class="tag" id="cert-verdict">—</span></span></div>
+        <div class="row"><span class="rk">oracle</span><span class="rv" id="cert-oracle">—</span></div>
+        <div class="row"><span class="rk">evidence</span><span class="rv"></span></div>
+        <div class="evidence" id="cert-evidence"></div>
+        <div class="conn">↞ both witnesses point here ↠</div>
+      </div>
+    </section>
+
+    <!-- THE MODEL'S EYE -->
+    <section class="panel meye" aria-labelledby="h-model">
+      <h2 id="h-model">The model's eye</h2>
+      <div class="sub">the same frame, as witnessed structure</div>
+      <div class="block"><div class="label">derived form</div><div id="params"></div></div>
+      <div class="block"><div class="label">how well each axis is met · ◀ weakest</div><div id="axes"></div></div>
+      <div class="block"><div class="label">the reasoning it took to get here</div><div class="traj" id="trajectory"></div></div>
+    </section>
+
+  </main>
+
+  <div id="controls"></div>
+
+  <p class="status" id="status" role="status" aria-live="polite"></p>
+
+  <footer>
+    witnessed by studio-engine · judged by coherence-membrane · re-checkable by you ·
+    <a href="https://github.com/HarperZ9/studio-engine">source</a>
+  </footer>
+
+</div>
+
+<script type="module" src="./showcase.js"></script>
+</body>
+</html>
