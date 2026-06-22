@@ -1,81 +1,7 @@
 {
   "scenes": [
     {
-      "id": "c22640cafc9496e9",
-      "title": "Phyllotaxis #7",
-      "seed": 7,
-      "generator": "phyllotaxis",
-      "score": 0.9074,
-      "converged": true,
-      "palette": [
-        "#7375cb",
-        "#8e7fd8",
-        "#a88ae3",
-        "#c295ec",
-        "#dca1f3",
-        "#f5adf9"
-      ],
-      "layers": [
-        {
-          "role": "params",
-          "organ_id": "phyllotaxis.params",
-          "kind": "data",
-          "sha256": "c4b56f69f264bb02"
-        },
-        {
-          "role": "geometry",
-          "organ_id": "phyllotaxis",
-          "kind": "svg",
-          "sha256": "b85a0df4b3951374"
-        },
-        {
-          "role": "raster",
-          "organ_id": "raster.png",
-          "kind": "png",
-          "sha256": "74204ad379f162e7"
-        }
-      ],
-      "audio": "audio_params"
-    },
-    {
-      "id": "3070a53b2332c933",
-      "title": "Phyllotaxis #42",
-      "seed": 42,
-      "generator": "phyllotaxis",
-      "score": 0.8669,
-      "converged": false,
-      "palette": [
-        "#938100",
-        "#969420",
-        "#97a840",
-        "#97bb5b",
-        "#96ce77",
-        "#95e194"
-      ],
-      "layers": [
-        {
-          "role": "params",
-          "organ_id": "phyllotaxis.params",
-          "kind": "data",
-          "sha256": "ae8aebfb70abda85"
-        },
-        {
-          "role": "geometry",
-          "organ_id": "phyllotaxis",
-          "kind": "svg",
-          "sha256": "4fad2d051e2a65d8"
-        },
-        {
-          "role": "raster",
-          "organ_id": "raster.png",
-          "kind": "png",
-          "sha256": "ff97f28af38768d1"
-        }
-      ],
-      "audio": "audio_params"
-    },
-    {
-      "id": "db3d8b68e79adbdf",
+      "id": "1e1312cf579e9deb",
       "title": "Gyroid #7",
       "seed": 7,
       "generator": "gyroid",
@@ -91,57 +17,22 @@
       ],
       "layers": [
         {
-          "role": "params",
-          "organ_id": "gyroid.params",
-          "kind": "data",
-          "sha256": "27414ef520a7e5a0"
-        },
-        {
-          "role": "geometry",
+          "role": "render",
           "organ_id": "gyroid",
-          "kind": "svg",
-          "sha256": "1d0e334e2d1a62b4"
+          "z": 0,
+          "blend": "normal",
+          "target": "glsl-fragment"
         }
       ],
-      "audio": "audio_params"
+      "audio": "additive-sine",
+      "animatable": true
     },
     {
-      "id": "d08a8cf250429a3e",
-      "title": "Gyroid #42",
-      "seed": 42,
-      "generator": "gyroid",
-      "score": 0.8855,
-      "converged": false,
-      "palette": [
-        "#938100",
-        "#969420",
-        "#97a840",
-        "#97bb5b",
-        "#96ce77",
-        "#95e194"
-      ],
-      "layers": [
-        {
-          "role": "params",
-          "organ_id": "gyroid.params",
-          "kind": "data",
-          "sha256": "4a22c16a095b80ce"
-        },
-        {
-          "role": "geometry",
-          "organ_id": "gyroid",
-          "kind": "svg",
-          "sha256": "aba73b1785d2e292"
-        }
-      ],
-      "audio": "audio_params"
-    },
-    {
-      "id": "c55115c22a77ed58",
-      "title": "Quasicrystal #7",
+      "id": "5578405b59269e98",
+      "title": "Phyllotaxis #7",
       "seed": 7,
-      "generator": "quasicrystal",
-      "score": 0.9295,
+      "generator": "phyllotaxis",
+      "score": 0.9074,
       "converged": true,
       "palette": [
         "#7375cb",
@@ -153,50 +44,15 @@
       ],
       "layers": [
         {
-          "role": "params",
-          "organ_id": "quasicrystal.params",
-          "kind": "data",
-          "sha256": "0e91a18a22b41841"
-        },
-        {
-          "role": "geometry",
-          "organ_id": "quasicrystal",
-          "kind": "svg",
-          "sha256": "72b7702ae2846225"
+          "role": "render",
+          "organ_id": "phyllotaxis",
+          "z": 0,
+          "blend": "normal",
+          "target": "point-recipe"
         }
       ],
-      "audio": "audio_params"
-    },
-    {
-      "id": "8b0bf67ca4bde5f7",
-      "title": "Quasicrystal #42",
-      "seed": 42,
-      "generator": "quasicrystal",
-      "score": 0.996,
-      "converged": true,
-      "palette": [
-        "#938100",
-        "#969420",
-        "#97a840",
-        "#97bb5b",
-        "#96ce77",
-        "#95e194"
-      ],
-      "layers": [
-        {
-          "role": "params",
-          "organ_id": "quasicrystal.params",
-          "kind": "data",
-          "sha256": "e46ac5c686b68eeb"
-        },
-        {
-          "role": "geometry",
-          "organ_id": "quasicrystal",
-          "kind": "svg",
-          "sha256": "9bc813d2d2f64d68"
-        }
-      ],
-      "audio": "audio_params"
+      "audio": "additive-sine",
+      "animatable": false
     }
   ]
 }

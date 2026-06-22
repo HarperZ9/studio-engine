@@ -2,26 +2,33 @@
   "openapi": "3.0.3",
   "info": {
     "title": "studio-engine API",
-    "version": "0.1.0",
-    "description": "Native, zero-dependency creative-verification simulation engine. Emits witnessed Scenes (visuals + audio params + reasoning trajectory) for an experience-chamber frontend. schema: studio-engine/1."
+    "version": "0.2.0",
+    "description": "Native, zero-dependency creative-verification simulation engine. Emits witnessed Worlds (self-describing render programs + audio graph + motion timeline + reasoning trajectory) for an experience-chamber frontend. schema: studio-engine/2. Note: null-valued fields (audio_program, timeline, composition, layer.preview) are omitted from responses."
   },
   "servers": [{ "url": "http://127.0.0.1:8777" }],
   "paths": {
     "/health": { "get": { "summary": "Liveness", "responses": { "200": { "description": "ok",
       "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Health" } } } } } } },
-    "/simulate/stream": { "get": { "summary": "SSE: live refine steps then the scene",
+    "/simulate/stream": { "get": { "summary": "SSE: live refine steps then the world",
       "parameters": [ { "name": "seed", "in": "query", "schema": { "type": "integer" } },
         { "name": "generator", "in": "query", "schema": { "type": "string" } },
         { "name": "scheme", "in": "query", "schema": { "type": "string" } } ],
-      "responses": { "200": { "description": "text/event-stream: 'step' (Step) xN, 'scene' (Scene), 'done'",
+      "responses": { "200": { "description": "text/event-stream: 'step' (Step) xN, 'world' (World), 'done'",
         "content": { "text/event-stream": { "schema": { "type": "string" } } } } } } },
     "/scene/{id}/filmstrip": { "get": { "summary": "Per-step params for animating convergence",
       "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } } ],
       "responses": { "200": { "description": "filmstrip", "content": { "application/json": { "schema": { "type": "object" } } } },
         "404": { "description": "not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } } } } },
+    "/scene/{id}/program": { "get": { "summary": "Drop-in render programs, one per layer",
+      "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } } ],
+      "responses": {
+        "200": { "description": "render programs", "content": { "application/json": { "schema": { "type": "object", "properties": {
+          "scene_id": { "type": "string" },
+          "programs": { "type": "array", "items": { "$ref": "#/components/schemas/RenderProgram" } } } } } } },
+        "404": { "description": "not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } } } } },
     "/session": { "post": { "summary": "Start an interactive cross-examine session",
       "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SimulateRequest" } } } },
-      "responses": { "200": { "description": "session_id + state", "content": { "application/json": { "schema": { "type": "object" } } } } } } },
+      "responses": { "200": { "description": "session_id + state (state.program is the current RenderProgram)", "content": { "application/json": { "schema": { "type": "object" } } } } } } },
     "/session/{id}/step": { "post": { "summary": "Auto-refine one step",
       "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } } ],
       "responses": { "200": { "description": "step + state", "content": { "application/json": { "schema": { "type": "object" } } } },
@@ -36,31 +43,37 @@
         { "name": "axis", "in": "query", "schema": { "type": "string" } } ],
       "responses": { "200": { "description": "explanation", "content": { "application/json": { "schema": { "type": "object" } } } },
         "404": { "description": "not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } } } } },
-    "/session/{id}": { "get": { "summary": "Current session state",
+    "/session/{id}": { "get": { "summary": "Current session state (incl. program)",
       "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } } ],
       "responses": { "200": { "description": "session state", "content": { "application/json": { "schema": { "type": "object" } } } },
         "404": { "description": "not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } } } } },
     "/generators": { "get": { "summary": "List generators", "responses": { "200": { "description": "ok",
       "content": { "application/json": { "schema": { "type": "object", "properties": {
-        "generators": { "type": "array", "items": { "type": "string", "enum": ["phyllotaxis","gyroid","quasicrystal"] } } } } } } } } } },
+        "generators": { "type": "array", "items": { "type": "string", "enum": ["phyllotaxis","gyroid","quasicrystal","attractor","harmonograph","flowfield","metaballs","turbulence","rings","moire"] } } } } } } } } } },
     "/library": { "get": { "summary": "Resource library (organs)", "responses": { "200": { "description": "ok",
       "content": { "application/json": { "schema": { "type": "object", "properties": {
         "organs": { "type": "array", "items": { "$ref": "#/components/schemas/OrganInfo" } } } } } } } } } },
-    "/gallery": { "get": { "summary": "Pre-built showcase scenes", "responses": { "200": { "description": "ok",
+    "/gallery": { "get": { "summary": "Pre-built showcase worlds (summaries)", "responses": { "200": { "description": "ok",
       "content": { "application/json": { "schema": { "type": "object", "properties": {
         "scenes": { "type": "array", "items": { "$ref": "#/components/schemas/GallerySummary" } } } } } } } } } },
     "/simulate": { "post": { "summary": "Run the perceive->generate->critique->refine->witness loop",
       "requestBody": { "required": false, "content": { "application/json": {
         "schema": { "$ref": "#/components/schemas/SimulateRequest" } } } },
       "responses": {
-        "200": { "description": "a witnessed Scene", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Scene" } } } },
+        "200": { "description": "a witnessed World", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/World" } } } },
         "400": { "description": "bad request", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } } } } },
-    "/scene/{id}": { "get": { "summary": "Fetch a cached scene", "parameters": [
+    "/compose": { "post": { "summary": "Layer several organs into one composite World",
+      "requestBody": { "required": false, "content": { "application/json": {
+        "schema": { "$ref": "#/components/schemas/ComposeRequest" } } } },
+      "responses": {
+        "200": { "description": "a multi-layer World (carries the composition Verdict)", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/World" } } } },
+        "400": { "description": "bad request", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } } } } },
+    "/scene/{id}": { "get": { "summary": "Fetch a cached world", "parameters": [
         { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } } ],
       "responses": {
-        "200": { "description": "Scene", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Scene" } } } },
+        "200": { "description": "World", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/World" } } } },
         "404": { "description": "not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } } } } },
-    "/audio/{id}.wav": { "get": { "summary": "Baked WAV sonification of a scene", "parameters": [
+    "/audio/{id}.wav": { "get": { "summary": "Baked WAV sonification of a world", "parameters": [
         { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } } ],
       "responses": {
         "200": { "description": "WAV audio", "content": { "audio/wav": { "schema": { "type": "string", "format": "binary" } } } },
@@ -72,7 +85,11 @@
       "Error": { "type": "object", "properties": { "error": { "type": "string" }, "path": { "type": "string" } } },
       "SimulateRequest": { "type": "object", "properties": {
         "seed": { "type": "integer", "default": 0 },
-        "generator": { "type": "string", "enum": ["phyllotaxis","gyroid","quasicrystal"], "default": "phyllotaxis" },
+        "generator": { "type": "string", "enum": ["phyllotaxis","gyroid","quasicrystal","attractor","harmonograph","flowfield","metaballs","turbulence","rings","moire"], "default": "phyllotaxis" },
+        "scheme": { "type": "string", "enum": ["analogous","triadic","complementary","wide"], "default": "analogous" } } },
+      "ComposeRequest": { "type": "object", "properties": {
+        "seed": { "type": "integer", "default": 0 },
+        "organs": { "type": "array", "items": { "type": "string", "enum": ["phyllotaxis","gyroid","quasicrystal","attractor","harmonograph","flowfield","metaballs","turbulence","rings","moire"] }, "description": "default [gyroid, phyllotaxis]; alias: organ_set" },
         "scheme": { "type": "string", "enum": ["analogous","triadic","complementary","wide"], "default": "analogous" } } },
       "Artifact": { "type": "object", "properties": {
         "kind": { "type": "string", "enum": ["svg","png","audio_wav","audio_params","data"] },
@@ -87,7 +104,9 @@
         "index": { "type": "integer" }, "phase": { "type": "string", "enum": ["perceive","generate","critique","refine","witness"] },
         "params": { "type": "object", "additionalProperties": true },
         "verdicts": { "type": "array", "items": { "$ref": "#/components/schemas/Verdict" } },
-        "score": { "type": "number" }, "note": { "type": "string" } } },
+        "score": { "type": "number" },
+        "margins": { "type": "object", "additionalProperties": { "type": "number" } },
+        "weakest": { "type": "string" }, "note": { "type": "string" } } },
       "Trajectory": { "type": "object", "properties": {
         "steps": { "type": "array", "items": { "$ref": "#/components/schemas/Step" } },
         "accepted_index": { "type": "integer" }, "converged": { "type": "boolean" } } },
@@ -97,19 +116,74 @@
         "artifact_shas": { "type": "array", "items": { "type": "string" } },
         "final_score": { "type": "number" }, "schema_version": { "type": "string" },
         "author": { "type": "string" }, "producer": { "type": "string" } } },
-      "SceneLayer": { "type": "object", "properties": {
+      "UniformSpec": { "type": "object", "properties": {
+        "type": { "type": "string", "description": "float | vec2 | vec3 | vec3[] | ..." },
+        "default": { "type": "number" },
+        "value": { "description": "u_palette -> hex string[]; u_value_range -> [lo, hi]" } } },
+      "RenderProgram": { "type": "object", "description": "A drop-in live render emitted as data.",
+        "properties": {
+          "target": { "type": "string", "enum": ["glsl-fragment","point-recipe"] },
+          "generator": { "type": "string" },
+          "source": { "type": "string", "description": "complete WebGL1 fragment shader; present for glsl-fragment, compile verbatim" },
+          "recipe": { "type": "object", "additionalProperties": true, "description": "point recipe (spiral|iterated|parametric); present for point-recipe" },
+          "uniforms": { "type": "object", "additionalProperties": { "$ref": "#/components/schemas/UniformSpec" } },
+          "domain": { "type": "object", "properties": {
+            "u": { "type": "array", "items": { "type": "number" } },
+            "v": { "type": "array", "items": { "type": "number" } },
+            "t": { "type": "array", "items": { "type": "number" }, "description": "[0, period]" },
+            "animatable": { "type": "boolean" }, "period": { "type": "number" } } },
+          "value_range": { "type": "array", "items": { "type": "number" }, "description": "[lo, hi]; feeds u_value_range" },
+          "color": { "type": "object", "properties": { "mode": { "type": "string" }, "stops": { "type": "integer" } } },
+          "expr_sha256": { "type": "string" }, "notes": { "type": "string" } },
+        "required": ["target","generator"] },
+      "AudioProgram": { "type": "object", "properties": {
+        "oscillators": { "type": "array", "items": { "type": "object", "properties": {
+          "harmonic": { "type": "integer" }, "gain": { "type": "number" }, "phase": { "type": "number" } } } },
+        "base_freq": { "type": "number" },
+        "pitch_curve": { "type": "array", "items": { "type": "number" } },
+        "envelope": { "type": "object", "additionalProperties": { "type": "number" } },
+        "waveform": { "type": "string" }, "expr_sha256": { "type": "string" }, "wav_url": { "type": "string" } } },
+      "Timeline": { "type": "object", "properties": {
+        "period": { "type": "number" },
+        "channels": { "type": "array", "items": { "type": "object", "properties": {
+          "target": { "type": "string" }, "kind": { "type": "string" },
+          "from": { "type": "number" }, "to": { "type": "number" } } } },
+        "continuity": { "$ref": "#/components/schemas/Verdict" },
+        "on_criterion": { "$ref": "#/components/schemas/Verdict" } } },
+      "Layer": { "type": "object", "properties": {
         "organ_id": { "type": "string" }, "title": { "type": "string" },
-        "artifact": { "$ref": "#/components/schemas/Artifact" },
-        "role": { "type": "string", "description": "params|geometry|raster|audio|...; the params layer (z=-1) is rendered live" },
-        "z": { "type": "integer" } } },
-      "Scene": { "type": "object", "properties": {
-        "id": { "type": "string" }, "title": { "type": "string" },
-        "layers": { "type": "array", "items": { "$ref": "#/components/schemas/SceneLayer" } },
-        "audio": { "oneOf": [ { "$ref": "#/components/schemas/Artifact" }, { "type": "null" } ] },
-        "trajectory": { "$ref": "#/components/schemas/Trajectory" },
-        "receipt": { "$ref": "#/components/schemas/Receipt" },
-        "palette": { "type": "array", "items": { "type": "string" } },
-        "schema_version": { "type": "string" } },
+        "role": { "type": "string", "description": "the live visual layer is role 'render'" },
+        "z": { "type": "integer" },
+        "render_program": { "$ref": "#/components/schemas/RenderProgram" },
+        "blend": { "type": "string", "enum": ["normal","add","screen","multiply"] },
+        "preview": { "$ref": "#/components/schemas/Artifact" } },
+        "required": ["organ_id","title","role","z","render_program","blend"] },
+      "World": { "type": "object", "description": "Note: audio_program/timeline/composition/layer.preview are omitted when null.",
+        "properties": {
+          "id": { "type": "string" }, "title": { "type": "string" },
+          "layers": { "type": "array", "items": { "$ref": "#/components/schemas/Layer" } },
+          "audio_program": { "$ref": "#/components/schemas/AudioProgram" },
+          "timeline": { "$ref": "#/components/schemas/Timeline" },
+          "trajectory": { "$ref": "#/components/schemas/Trajectory" },
+          "receipt": { "$ref": "#/components/schemas/Receipt" },
+          "palette": { "type": "array", "items": { "type": "string" } },
+          "composition": { "$ref": "#/components/schemas/Verdict" },
+          "schema_version": { "type": "string" } },
+        "required": ["id","title","layers","trajectory","receipt","palette","schema_version"] },
+      "SceneLayer": { "type": "object", "description": "LEGACY projection (World.as_scene()).",
+        "properties": {
+          "organ_id": { "type": "string" }, "title": { "type": "string" },
+          "artifact": { "$ref": "#/components/schemas/Artifact" },
+          "role": { "type": "string" }, "z": { "type": "integer" } } },
+      "Scene": { "type": "object", "description": "LEGACY projection of a World. Live endpoints return World.",
+        "properties": {
+          "id": { "type": "string" }, "title": { "type": "string" },
+          "layers": { "type": "array", "items": { "$ref": "#/components/schemas/SceneLayer" } },
+          "audio": { "oneOf": [ { "$ref": "#/components/schemas/Artifact" }, { "type": "null" } ] },
+          "trajectory": { "$ref": "#/components/schemas/Trajectory" },
+          "receipt": { "$ref": "#/components/schemas/Receipt" },
+          "palette": { "type": "array", "items": { "type": "string" } },
+          "schema_version": { "type": "string" } },
         "required": ["id","title","layers","trajectory","receipt","palette"] },
       "OrganInfo": { "type": "object", "properties": {
         "id": { "type": "string" }, "name": { "type": "string" },
@@ -121,8 +195,11 @@
         "id": { "type": "string" }, "title": { "type": "string" }, "seed": { "type": "integer" },
         "generator": { "type": "string" }, "score": { "type": "number" }, "converged": { "type": "boolean" },
         "palette": { "type": "array", "items": { "type": "string" } },
-        "layers": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
-        "audio": { "type": "string", "nullable": true } } }
+        "layers": { "type": "array", "items": { "type": "object", "properties": {
+          "role": { "type": "string" }, "organ_id": { "type": "string" }, "z": { "type": "integer" },
+          "blend": { "type": "string" }, "target": { "type": "string" } } } },
+        "audio": { "type": "string", "nullable": true, "description": "the audio_program waveform, or null" },
+        "animatable": { "type": "boolean" } } }
     }
   }
 }
