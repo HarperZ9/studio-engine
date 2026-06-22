@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import math
 
+from ..strand import expr as ex
+
 PARAMS0 = {"freq": 3.0, "octaves": 4.0, "gain": 0.55}
 BOUNDS = {"freq": (1.5, 6.0), "octaves": (2.0, 6.0), "gain": (0.35, 0.7)}
 
@@ -16,26 +18,38 @@ DEFAULT_PALETTE = ['#2dd4bf', '#7a5cff', '#fbbf24', '#ff7a5c']
 BG = "#0e1116"
 
 
-def value(params: dict, u: float, v: float) -> float:
-    """Fractal turbulence (fBm of sinusoids) at (u, v), u, v in [-1, 1]. PURE.
+ANIMATABLE = True
 
-    Sums `octaves` octaves of a sinusoidal basis; each octave doubles the frequency
-    and scales the amplitude by `gain`**o. The accumulator is normalized by the sum of
-    amplitudes, yielding a smooth fractal field in roughly [-1, 1].
+
+def expr(params: dict) -> ex.Expr:
+    """fBm of sinusoids as a strand expr: (sum_o gain^o sin(f_o u + sin(f_o v) + t) cos(f_o v))/amp.
+
+    Octaves unrolled at build time; amp_sum baked. eval(expr) at t=0 == the original value().
     """
-    freq0 = params["freq"]
+    freq0 = float(params["freq"])
     octaves = int(round(params["octaves"]))
-    gain = params["gain"]
-    acc = 0.0
+    gain = float(params["gain"])
+    u, v, t = ex.var("u"), ex.var("v"), ex.var("t")
+    terms = []
     amp_sum = 0.0
     for o in range(octaves):
         freq = freq0 * (2 ** o)
         amp = gain ** o
-        acc += amp * math.sin(freq * u + math.sin(freq * v)) * math.cos(freq * v)
         amp_sum += amp
-    if amp_sum == 0.0:
-        return 0.0
-    return acc / amp_sum
+        terms.append(ex.mul(amp,
+                            ex.sin(ex.add(ex.mul(u, freq), ex.sin(ex.mul(v, freq)), t)),
+                            ex.cos(ex.mul(v, freq))))
+    acc = ex.add(*terms) if terms else ex.const(0.0)
+    return ex.div(acc, amp_sum if amp_sum != 0.0 else 1.0)
+
+
+def value(params: dict, u: float, v: float) -> float:
+    """Fractal turbulence at (u, v), u, v in [-1, 1] — the expr sampled at t=0 (~[-1, 1])."""
+    return ex.eval_expr(expr(params), {"u": u, "v": v, "t": 0.0})
+
+
+def period(params: dict) -> float:
+    return 2.0 * math.pi
 
 
 def _palette_index(val: float, lo: float, hi: float, n: int) -> int:
