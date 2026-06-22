@@ -7,6 +7,8 @@ from __future__ import annotations
 
 import math
 
+from ..strand import recipe as rc
+
 GOLDEN_ANGLE = 137.50776405003785  # 360 * (1 - 1/phi); tightest non-overlapping packing
 
 
@@ -15,6 +17,11 @@ def phyllotaxis(n: int = 600, angle_deg: float = GOLDEN_ANGLE, scale: float = 9.
     a = math.radians(angle_deg)
     return [(scale * math.sqrt(i) * math.cos(i * a),
              scale * math.sqrt(i) * math.sin(i * a), i) for i in range(n)]
+
+
+def recipe(params: dict, count: int = 700) -> dict:
+    """Spiral recipe reproducing phyllotaxis(count, angle, scale) — the point channel."""
+    return rc.spiral(angle_deg=params["angle"], scale=params["scale"], count=count)
 
 
 def to_svg(pts, palette: list[str], size: int = 720, dot: float = 4.0,

@@ -9,10 +9,21 @@ from __future__ import annotations
 
 import math
 
+from ..strand import expr as ex, recipe as rc
+
 PARAMS0 = {"a": 1.7, "b": 1.7, "c": 0.6, "d": 1.2}
 BOUNDS = {"a": (-2.5, 2.5), "b": (-2.5, 2.5), "c": (-2.5, 2.5), "d": (-2.5, 2.5)}
 
 _TRANSIENT = 20  # discard the first ~20 iterations while the orbit settles
+
+
+def recipe(params: dict, count: int = 3000) -> dict:
+    """Iterated-map recipe reproducing the de Jong orbit: x'=sin(a y)-cos(b x), y'=sin(c x)-cos(d y)."""
+    a, b, c, d = params["a"], params["b"], params["c"], params["d"]
+    x, y = ex.var("x"), ex.var("y")
+    ux = ex.sub(ex.sin(ex.mul(y, a)), ex.cos(ex.mul(x, b)))
+    uy = ex.sub(ex.sin(ex.mul(x, c)), ex.cos(ex.mul(y, d)))
+    return rc.iterated(ux, uy, init=[0.1, 0.1], transient=_TRANSIENT, count=count)
 
 
 def points(params: dict, n: int = 3000) -> list[tuple[float, float, int]]:

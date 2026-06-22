@@ -44,7 +44,7 @@ def _gens() -> dict[str, dict[str, Any]]:
             "axes": ["golden_angle", "balance", "coverage", "complexity"],
             "render": lambda p, pl: geo.to_svg(geo.phyllotaxis(700, p["angle"], p["scale"]), pl, dot=p["dot"]),
             "points": lambda p: geo.phyllotaxis(700, p["angle"], p["scale"]),
-            "field": None,
+            "field": None, "recipe": geo.recipe, "animatable": False, "period": lambda p: 0.0,
         },
         "gyroid": {
             "params0": lambda rng: {"freq": round(4.0 + (rng % 500) / 100.0, 3),
@@ -71,11 +71,13 @@ def _gens() -> dict[str, dict[str, Any]]:
             "params0": lambda rng: _init(att.PARAMS0, att.BOUNDS, rng), "bounds": att.BOUNDS,
             "axes": ["balance", "coverage", "complexity"],
             "render": lambda p, pl: att.svg(p, pl), "points": lambda p: att.points(p), "field": None,
+            "recipe": att.recipe, "animatable": False, "period": lambda p: 0.0,
         },
         "harmonograph": {
             "params0": lambda rng: _init(harm.PARAMS0, harm.BOUNDS, rng), "bounds": harm.BOUNDS,
             "axes": ["balance", "coverage", "complexity"],
             "render": lambda p, pl: harm.svg(p, pl), "points": lambda p: harm.points(p), "field": None,
+            "recipe": harm.recipe, "animatable": False, "period": lambda p: 0.0,
         },
         "flowfield": {
             "params0": lambda rng: _init(flow.PARAMS0, flow.BOUNDS, rng), "bounds": flow.BOUNDS,
