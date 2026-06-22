@@ -285,3 +285,27 @@ organ refactors, per-generator tests, and docs fan out to parallel agents.
 - **Audio additive restriction** — a general expr can't become a finite oscillator graph; the audio channel is *defined* as additive form, enforced by `emit_webaudio` (raises on non-additive).
 - **Gallery sha churn** — expected from canonicalization; covered by bumping schema `/2` pre-handoff.
 - **metaballs `div` in GLSL** — guarded by the same `+ε` the Python field uses; tested in round-trip.
+
+---
+
+## 14. Post-review reconciliation (deltas from the spec as built)
+
+Adversarial whole-branch review surfaced these; recorded here so spec and code agree:
+
+- **`value_range` is sampled across the whole loop**, not a single `t0`, for animatable fields — so
+  the shipped coloring covers every frame the chamber renders as `u_time` sweeps. (`organs/program.py`;
+  guarded by `tests/test_program.py::test_value_range_covers_animation`.) Honest claim: every frame's
+  *geometry* is the verified expression; the color range brackets the loop.
+- **`compose.py` is top-level** (`studio_engine/compose.py`), not `organs/compose.py` as §8 sketched —
+  to avoid shadowing the package-level `compose` name; matches `temporal.py`'s placement.
+- **The generator table lives in `registry.py`** (extracted from `engine.py`) to keep `engine.py`
+  under the 300-line gate; `engine._gens` re-exports `registry.gens`.
+- **Breadth criteria descoped:** `symmetry` would duplicate `balance` (both `1 − centroid_offset`), so
+  it was not added; `palette_harmony` exists as a *composition* axis in `compose.py`, not a per-artifact
+  criterion. The breadth pillar is met by +2 generators (`rings`, `moire`) and the interactive `program()`.
+- **Grounding test is non-circular through the shipped artifact:** `test_program.py::
+  test_shipped_glsl_body_is_the_engine_field` parses the `field()` body out of the emitted fragment and
+  confirms it evaluates to the engine's verified field; `test_organ_exprs.py` checks each field against an
+  independent reference. (The earlier same-function-vs-itself checks were removed.)
+- **Contract drift is guarded:** `tests/test_world_contract.py` parses `types.ts` + `openapi.json` and
+  fails if any generator or the schema version is missing — the regression guard for the original wound.

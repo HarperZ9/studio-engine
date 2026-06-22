@@ -1,5 +1,5 @@
 {
-  "id": "8523fa13bd5c1ba5",
+  "id": "8b951c16fc40d724",
   "title": "Composite: gyroid + phyllotaxis",
   "layers": [
     {
@@ -34,8 +34,8 @@
           "u_value_range": {
             "type": "vec2",
             "value": [
-              -1.405955,
-              1.41591
+              -1.499674,
+              1.499674
             ]
           }
         },
@@ -56,8 +56,8 @@
           "period": 0.628319
         },
         "value_range": [
-          -1.405955,
-          1.41591
+          -1.499674,
+          1.499674
         ],
         "color": {
           "mode": "ramp",
@@ -530,7 +530,7 @@
     "converged": false
   },
   "receipt": {
-    "scene_id": "8523fa13bd5c1ba5",
+    "scene_id": "8b951c16fc40d724",
     "seed": 7,
     "organ_ids": [
       "gyroid",

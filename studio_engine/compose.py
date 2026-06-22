@@ -69,7 +69,7 @@ def compose(seed: int = 0, organ_set: list | None = None, scheme: str = "analogo
     score = crit.cohesion(list(axes.values()))
     comp = Verdict("composition", crit.tag(score), round(score, 4),
                    "; ".join(f"{k}={v}" for k, v in axes.items()))
-    sid = _sha("compose:" + ":".join(organ_set) + f":{seed}:{scheme}")
+    sid = _sha("compose:" + ":".join(organ_set) + f":{seed}:{scheme}:" + ":".join(shas))
     return World(id=sid, title="Composite: " + " + ".join(organ_set), layers=layers,
                  audio_program=first.audio_program, timeline=first.timeline,
                  trajectory=first.trajectory,
