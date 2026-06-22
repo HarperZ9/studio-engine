@@ -1,1676 +1,309 @@
-<!DOCTYPE html>
+<!doctype html>
+<!--
+  studio-engine — reference experience chamber (single file, zero build, zero deps).
+
+  RUN:
+    1. python -m studio_engine.server 8777      (from the repo root)
+    2. open this file in a browser (file:// is fine; CORS is open on the server).
+
+  WHAT IT PROVES (manual verification checklist):
+    [ ] Load a gallery World, or POST /simulate — a field generator (e.g. gyroid) RENDERS LIVE
+        in WebGL by compiling the shipped render_program.source VERBATIM, and BREATHES as u_time
+        animates over [0, period). (This is the engine's verified math, not a re-derivation.)
+    [ ] A point generator (phyllotaxis/attractor/harmonograph) draws from its recipe on Canvas2D.
+    [ ] "▶ audio" synthesizes the audio_program (oscillators + pitch sweep) via Web Audio.
+    [ ] "composite" stacks two blended layers (field behind, points in front) from /compose.
+    [ ] The reasoning panel shows per-axis margins, the timeline continuity/on-criterion verdicts,
+        and the receipt (id, seed, final_score, expr_sha256s) — every frame accountable.
+
+  This is the reference consumer. The native GPU renderer is a separate project (raw); here the
+  browser compiles the shipped shader. Every frame is grounded and reproducible.
+-->
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Studio Engine — Reference Chamber</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>studio-engine · experience chamber</title>
 <style>
-/* ── reset + base ── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-:root {
-  --c0: #0a0a0f;
-  --c1: #111118;
-  --p0: #7375cb;
-  --p1: #8e7fd8;
-  --p2: #a88ae3;
-  --p3: #c295ec;
-  --p4: #dca1f3;
-  --p5: #f5adf9;
-  --glass: rgba(10, 10, 20, 0.72);
-  --glass-border: rgba(255, 255, 255, 0.07);
-  --text: rgba(255, 255, 255, 0.88);
-  --text-dim: rgba(255, 255, 255, 0.45);
-  --text-muted: rgba(255, 255, 255, 0.22);
-  --verified: #64d97b;
-  --refuted: #f06060;
-  --unverifiable: #a0a0c0;
-  --radius: 8px;
-  --panel-w: 320px;
-  --gallery-h: 80px;
-  --controls-h: 56px;
-  --font: "SF Mono", "Fira Code", "Cascadia Code", ui-monospace, monospace;
-}
-
-html, body {
-  width: 100%; height: 100%;
-  background: var(--c0);
-  color: var(--text);
-  font-family: var(--font);
-  font-size: 12px;
-  overflow: hidden;
-}
-
-/* ── canvas (fullscreen, behind everything) ── */
-#render-canvas {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  display: block;
-  z-index: 0;
-  transition: opacity 0.6s ease;
-}
-
-/* ── SVG fallback (shown when WebGL unavailable) ── */
-#svg-fallback {
-  position: fixed;
-  inset: 0;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  z-index: 1;
-  pointer-events: none;
-}
-#svg-fallback svg {
-  max-width: 90vmin;
-  max-height: 90vmin;
-}
-
-/* ── vignette overlay ── */
-.vignette {
-  position: fixed;
-  inset: 0;
-  background: radial-gradient(ellipse at center,
-    transparent 40%,
-    rgba(0, 0, 0, 0.55) 100%
-  );
-  z-index: 2;
-  pointer-events: none;
-}
-
-/* ── side panel ── */
-#panel {
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: var(--panel-w);
-  height: calc(100vh - var(--gallery-h));
-  background: var(--glass);
-  border-left: 1px solid var(--glass-border);
-  backdrop-filter: blur(18px) saturate(1.4);
-  -webkit-backdrop-filter: blur(18px) saturate(1.4);
-  z-index: 10;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-#panel-header {
-  padding: 20px 20px 14px;
-  border-bottom: 1px solid var(--glass-border);
-  flex-shrink: 0;
-}
-
-#scene-title {
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  color: var(--text);
-  margin-bottom: 4px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-#scene-meta {
-  color: var(--text-dim);
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-/* ── palette swatches ── */
-#palette-row {
-  display: flex;
-  gap: 4px;
-  padding: 14px 20px;
-  border-bottom: 1px solid var(--glass-border);
-  flex-shrink: 0;
-}
-
-.swatch {
-  flex: 1;
-  height: 20px;
-  border-radius: 3px;
-  transition: transform 0.15s ease;
-}
-.swatch:hover { transform: scaleY(1.4); }
-
-/* ── scrollable body ── */
-#panel-body {
-  flex: 1;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--glass-border) transparent;
-}
-
-/* ── section heading ── */
-.section-label {
-  padding: 14px 20px 6px;
-  font-size: 9px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  font-weight: 700;
-}
-
-/* ── trajectory ── */
-#trajectory {
-  padding: 0 20px 8px;
-}
-
-.traj-step {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 6px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
-  opacity: 0;
-  transform: translateX(8px);
-  transition: opacity 0.35s ease, transform 0.35s ease;
-}
-.traj-step.visible { opacity: 1; transform: none; }
-
-.traj-step-idx {
-  width: 18px;
-  flex-shrink: 0;
-  font-size: 9px;
-  color: var(--text-muted);
-  padding-top: 1px;
-  text-align: right;
-}
-
-.traj-step-body { flex: 1; min-width: 0; }
-
-.traj-score-bar {
-  height: 3px;
-  border-radius: 2px;
-  margin-bottom: 4px;
-  background: var(--glass-border);
-  overflow: hidden;
-}
-.traj-score-fill {
-  height: 100%;
-  border-radius: 2px;
-  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.traj-verdict {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 9px;
-}
-
-.tag-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.tag-verified   { background: var(--verified); }
-.tag-refuted    { background: var(--refuted); }
-.tag-unverifiable { background: var(--unverifiable); }
-
-.verdict-tag {
-  font-size: 9px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-.color-verified   { color: var(--verified); }
-.color-refuted    { color: var(--refuted); }
-.color-unverifiable { color: var(--unverifiable); }
-
-.traj-score-num {
-  margin-left: auto;
-  font-size: 9px;
-  color: var(--text-dim);
-  font-variant-numeric: tabular-nums;
-}
-
-/* ── receipt ── */
-#receipt {
-  padding: 0 20px 14px;
-}
-
-.receipt-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  padding: 3px 0;
-  font-size: 9px;
-  border-bottom: 1px solid rgba(255,255,255,0.03);
-}
-.receipt-key {
-  color: var(--text-muted);
-  letter-spacing: 0.05em;
-}
-.receipt-val {
-  color: var(--text-dim);
-  font-variant-numeric: tabular-nums;
-  max-width: 160px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  text-align: right;
-}
-.receipt-val.highlight {
-  color: var(--p2);
-  font-weight: 600;
-}
-
-/* ── audio control ── */
-#audio-strip {
-  padding: 10px 20px 14px;
-  border-top: 1px solid var(--glass-border);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-}
-
-#audio-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 1px solid var(--glass-border);
-  background: rgba(255,255,255,0.06);
-  color: var(--text);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  transition: background 0.15s, border-color 0.15s;
-  flex-shrink: 0;
-}
-#audio-btn:hover { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.18); }
-#audio-btn.playing { border-color: var(--p2); color: var(--p2); }
-
-#audio-label {
-  font-size: 9px;
-  color: var(--text-dim);
-  letter-spacing: 0.06em;
-  line-height: 1.5;
-}
-
-/* ── controls panel (bottom of side panel) ── */
-#controls {
-  padding: 12px 20px 16px;
-  border-top: 1px solid var(--glass-border);
-  flex-shrink: 0;
-}
-
-.ctrl-row {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 8px;
-  align-items: center;
-}
-.ctrl-row:last-child { margin-bottom: 0; }
-
-.ctrl-label {
-  font-size: 9px;
-  color: var(--text-muted);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  width: 40px;
-  flex-shrink: 0;
-}
-
-select, input[type="number"] {
-  flex: 1;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid var(--glass-border);
-  border-radius: 4px;
-  color: var(--text);
-  font-family: var(--font);
-  font-size: 10px;
-  padding: 5px 7px;
-  appearance: none;
-  -webkit-appearance: none;
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
-}
-select:hover, input[type="number"]:hover {
-  border-color: rgba(255,255,255,0.18);
-  background: rgba(255,255,255,0.09);
-}
-select:focus, input[type="number"]:focus {
-  outline: none;
-  border-color: var(--p2);
-}
-
-#simulate-btn {
-  width: 100%;
-  padding: 9px;
-  background: rgba(168, 138, 227, 0.15);
-  border: 1px solid rgba(168, 138, 227, 0.35);
-  border-radius: 5px;
-  color: var(--p3);
-  font-family: var(--font);
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
-}
-#simulate-btn:hover {
-  background: rgba(168, 138, 227, 0.28);
-  border-color: rgba(168, 138, 227, 0.6);
-  color: var(--p4);
-}
-#simulate-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-/* ── gallery rail (bottom bar) ── */
-#gallery-rail {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: var(--gallery-h);
-  background: var(--glass);
-  border-top: 1px solid var(--glass-border);
-  backdrop-filter: blur(18px) saturate(1.4);
-  -webkit-backdrop-filter: blur(18px) saturate(1.4);
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 0 16px;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-#gallery-rail::-webkit-scrollbar { display: none; }
-
-.gallery-thumb {
-  flex-shrink: 0;
-  width: 52px;
-  height: 52px;
-  border-radius: 6px;
-  border: 2px solid transparent;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-  background: var(--c1);
-  transition: border-color 0.2s, transform 0.2s;
-}
-.gallery-thumb:hover { transform: translateY(-3px); }
-.gallery-thumb.active { border-color: var(--p2); }
-
-.gallery-thumb-swatch {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-}
-.gallery-thumb-swatch > div {
-  flex: 1;
-}
-
-.gallery-thumb-label {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: rgba(0,0,0,0.6);
-  font-size: 7px;
-  padding: 2px 3px;
-  letter-spacing: 0.05em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: var(--text-dim);
-}
-
-.gallery-thumb.active .gallery-thumb-label {
-  color: var(--p3);
-}
-
-/* ── status / loading ── */
-#status-bar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: var(--panel-w);
-  height: 2px;
-  z-index: 20;
-  background: transparent;
-  overflow: hidden;
-}
-#status-progress {
-  height: 100%;
-  width: 0;
-  background: linear-gradient(90deg, var(--p0), var(--p3), var(--p5));
-  transition: width 0.3s ease, opacity 0.4s ease;
-}
-
-/* ── toast ── */
-#toast {
-  position: fixed;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%) translateY(-8px);
-  background: rgba(20, 20, 35, 0.92);
-  border: 1px solid var(--glass-border);
-  border-radius: 6px;
-  padding: 8px 16px;
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  color: var(--text-dim);
-  z-index: 100;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.25s ease, transform 0.25s ease;
-}
-#toast.show {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
-
-/* ── no-webgl notice ── */
-#no-webgl-notice {
-  position: fixed;
-  top: 16px;
-  left: 16px;
-  font-size: 9px;
-  color: var(--refuted);
-  letter-spacing: 0.06em;
-  z-index: 15;
-  display: none;
-  background: rgba(240, 96, 96, 0.1);
-  border: 1px solid rgba(240, 96, 96, 0.25);
-  border-radius: 4px;
-  padding: 4px 8px;
-}
-
-/* ── generator label (top-left corner) ── */
-#generator-label {
-  position: fixed;
-  top: 20px;
-  left: 20px;
-  font-size: 9px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  z-index: 8;
-  pointer-events: none;
-  transition: opacity 0.4s ease;
-}
-#generator-label span {
-  color: var(--p2);
-  font-weight: 600;
-}
-
-/* ── score pill ── */
-#score-pill {
-  position: fixed;
-  top: 50px;
-  left: 20px;
-  font-size: 9px;
-  letter-spacing: 0.1em;
-  color: var(--text-muted);
-  z-index: 8;
-  pointer-events: none;
-  line-height: 1.8;
-}
-#score-val {
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--text);
-  display: block;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-
-/* ── reduced motion ── */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.1ms !important;
+  :root{
+    --bg:#0b0e13; --panel:#12161e; --line:#222a36; --ink:#e8ecf4; --dim:#8893a7;
+    --a:#2dd4bf; --b:#7a5cff; --c:#fbbf24;
+    --font:'Segoe UI',system-ui,sans-serif; --mono:'SFMono-Regular',Consolas,monospace;
   }
-}
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 600px at 70% -10%,#161b26,#0b0e13 60%);
+       color:var(--ink);font-family:var(--font);min-height:100vh}
+  header{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:14px 20px;
+         border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(11,14,19,.85);
+         backdrop-filter:blur(8px);z-index:5}
+  h1{font-size:16px;font-weight:600;margin:0;letter-spacing:.5px}
+  h1 small{color:var(--dim);font-weight:400}
+  .grow{flex:1}
+  input,select,button{font:inherit;color:var(--ink);background:#0e131b;border:1px solid var(--line);
+       border-radius:8px;padding:7px 10px}
+  input[type=number]{width:74px}
+  button{cursor:pointer;background:linear-gradient(180deg,#1b2433,#141b27);transition:.15s}
+  button:hover{border-color:var(--a);color:#fff}
+  button.primary{background:linear-gradient(180deg,var(--a),#1aa896);color:#06231f;border:none;font-weight:600}
+  main{display:grid;grid-template-columns:1fr 360px;gap:18px;padding:18px 20px}
+  @media(max-width:900px){main{grid-template-columns:1fr}}
+  .stage{position:relative;aspect-ratio:1/1;width:100%;background:#06080c;border:1px solid var(--line);
+         border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+  .stage canvas,.stage .svgwrap{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .stage .badge{position:absolute;left:12px;top:12px;font:12px/1 var(--mono);color:var(--dim);
+       background:rgba(0,0,0,.45);padding:6px 9px;border-radius:7px;border:1px solid var(--line);z-index:2}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px}
+  .panel h2{font-size:12px;text-transform:uppercase;letter-spacing:1.2px;color:var(--dim);margin:0 0 12px}
+  .swatches{display:flex;gap:6px;margin:10px 0}
+  .swatches i{flex:1;height:18px;border-radius:5px}
+  .axis{display:flex;align-items:center;gap:8px;margin:5px 0;font:12px/1 var(--mono)}
+  .axis .name{width:96px;color:var(--dim)}
+  .axis .bar{flex:1;height:9px;background:#0c1118;border-radius:5px;overflow:hidden}
+  .axis .fill{height:100%;background:linear-gradient(90deg,var(--b),var(--a))}
+  .axis.weak .fill{background:linear-gradient(90deg,#ff5c7a,var(--c))}
+  .axis .val{width:42px;text-align:right}
+  .tag{padding:2px 7px;border-radius:6px;font-size:11px}
+  .tag.verified{background:#0c3b2e;color:#43e0b0}
+  .tag.unverifiable{background:#3a3410;color:#e8c64a}
+  .tag.refuted{background:#3d1620;color:#ff7a93}
+  .receipt{font:11px/1.6 var(--mono);color:var(--dim);word-break:break-all}
+  .gallery{display:flex;gap:10px;overflow-x:auto;padding:4px 20px 20px}
+  .card{flex:0 0 132px;border:1px solid var(--line);border-radius:10px;padding:10px;cursor:pointer;
+        background:var(--panel);transition:.15s}
+  .card:hover{border-color:var(--a);transform:translateY(-2px)}
+  .card .t{font-size:12px;font-weight:600;margin-bottom:6px}
+  .card .m{font:10px/1.4 var(--mono);color:var(--dim)}
+  .card .strip{display:flex;height:8px;border-radius:4px;overflow:hidden;margin-top:8px}
+  .card .strip i{flex:1}
+  #log{font:11px/1.5 var(--mono);color:var(--dim);white-space:pre-wrap;max-height:120px;overflow:auto}
+  .err{color:#ff7a93}
 </style>
 </head>
 <body>
+<header>
+  <h1>studio-engine <small>· experience chamber</small></h1>
+  <span class="grow"></span>
+  <input id="base" value="http://127.0.0.1:8777" size="22" title="API base URL">
+  <input id="seed" type="number" value="7" title="seed">
+  <select id="gen" title="generator"></select>
+  <select id="scheme" title="scheme">
+    <option>analogous</option><option>triadic</option><option>complementary</option><option>wide</option>
+  </select>
+  <button class="primary" id="run">simulate</button>
+  <button id="composeBtn">composite</button>
+  <button id="play">▶ audio</button>
+  <button id="stop">■</button>
+</header>
 
-<canvas id="render-canvas"></canvas>
-<div id="svg-fallback"></div>
-<div class="vignette"></div>
-<div id="status-bar"><div id="status-progress"></div></div>
-<div id="toast"></div>
-<div id="no-webgl-notice">WebGL unavailable — SVG fallback active</div>
-
-<div id="generator-label">generator / <span id="gen-name">—</span></div>
-<div id="score-pill">
-  <span id="score-val">—</span>
-  FINAL SCORE
-</div>
-
-<!-- side panel -->
-<div id="panel">
-  <div id="panel-header">
-    <div id="scene-title">loading...</div>
-    <div id="scene-meta">seed — · id —</div>
-  </div>
-
-  <div id="palette-row"></div>
-
-  <div id="panel-body">
-    <div class="section-label">trajectory — machine reasoning</div>
-    <div id="trajectory"></div>
-
-    <div class="section-label">receipt — proof of run</div>
-    <div id="receipt"></div>
-  </div>
-
-  <div id="audio-strip">
-    <button id="audio-btn" title="play / stop ambient audio" aria-label="play audio">&#9654;</button>
-    <div id="audio-label">ambient synthesis<br>from audio params</div>
-  </div>
-
-  <div id="controls">
-    <div class="ctrl-row">
-      <span class="ctrl-label">gen</span>
-      <select id="ctrl-gen">
-        <option value="phyllotaxis">phyllotaxis</option>
-        <option value="gyroid">gyroid</option>
-        <option value="quasicrystal">quasicrystal</option>
-      </select>
+<main>
+  <div class="stage" id="stage"><div class="badge" id="badge">— no world —</div></div>
+  <div>
+    <div class="panel">
+      <h2 id="worldTitle">world</h2>
+      <div class="swatches" id="swatches"></div>
+      <div id="meta" class="receipt"></div>
     </div>
-    <div class="ctrl-row">
-      <span class="ctrl-label">seed</span>
-      <input id="ctrl-seed" type="number" value="7" min="0" max="9999">
+    <div class="panel">
+      <h2>reasoning · per-axis margins (accepted)</h2>
+      <div id="axes"></div>
     </div>
-    <div class="ctrl-row">
-      <span class="ctrl-label">scheme</span>
-      <select id="ctrl-scheme">
-        <option value="analogous">analogous</option>
-        <option value="triadic">triadic</option>
-        <option value="complementary">complementary</option>
-        <option value="wide">wide</option>
-      </select>
+    <div class="panel">
+      <h2>witnessed motion · timeline</h2>
+      <div id="timeline" class="receipt">—</div>
     </div>
-    <div class="ctrl-row">
-      <button id="simulate-btn">simulate</button>
+    <div class="panel">
+      <h2>receipt · proof before trust</h2>
+      <div id="receipt" class="receipt">—</div>
     </div>
   </div>
-</div>
-
-<!-- gallery rail -->
-<div id="gallery-rail"></div>
+</main>
+<div class="gallery" id="gallery"></div>
+<div class="panel" style="margin:0 20px 24px"><h2>log</h2><div id="log"></div></div>
 
 <script>
-/* ════════════════════════════════════════════════════════════════
-   STUDIO ENGINE — REFERENCE CHAMBER
-   Vanilla JS + WebGL + Web Audio, zero dependencies.
-   ════════════════════════════════════════════════════════════════ */
+"use strict";
+const $ = s => document.querySelector(s);
+const base = () => $("#base").value.replace(/\/$/, "");
+const GENS = ["phyllotaxis","gyroid","quasicrystal","attractor","harmonograph",
+              "flowfield","metaballs","turbulence","rings","moire"];
+let RAF = 0, AUDIO = null;
 
-const API = "http://127.0.0.1:8777";
+function log(msg, err){ const el=$("#log"); el.innerHTML += `<span class="${err?'err':''}">`+msg+"</span>\n"; el.scrollTop=el.scrollHeight; }
+async function getJSON(path){ const r=await fetch(base()+path); if(!r.ok) throw new Error(path+" -> "+r.status); return r.json(); }
+async function postJSON(path,body){ const r=await fetch(base()+path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+  if(!r.ok) throw new Error(path+" -> "+r.status); return r.json(); }
 
-/* ── utilities ── */
-const $ = id => document.getElementById(id);
-const el = (tag, cls) => { const e = document.createElement(tag); if (cls) e.className = cls; return e; };
-
-function toast(msg, dur = 2800) {
-  const t = $("toast");
-  t.textContent = msg;
-  t.classList.add("show");
-  clearTimeout(toast._tid);
-  toast._tid = setTimeout(() => t.classList.remove("show"), dur);
+// ---------- a tiny evaluator for the recipe's GLSL-subset expression strings ----------
+// grammar matches strand.glsl emit: + - * , unary -, parens, numbers, vars x/y/t,
+// funcs sin cos exp abs sqrt, and safediv(a,b). No '/' operator is ever emitted.
+function makeEval(src){
+  const s=src.replace(/\s+/g,""); let i=0;
+  const peek=()=>s[i]||"";
+  const F={sin:Math.sin,cos:Math.cos,exp:Math.exp,abs:Math.abs,sqrt:x=>x>0?Math.sqrt(x):0};
+  function sum(env){ let v=term(env); while(peek()==="+"||peek()==="-"){const o=s[i++]; const r=term(env); v=o==="+"?v+r:v-r;} return v; }
+  function term(env){ let v=atom(env); while(peek()==="*"){i++; v*=atom(env);} return v; }
+  function atom(env){
+    const c=peek();
+    if(c==="("){ i++; let neg=false; if(peek()==="-"){i++;neg=true;} const v=sum(env); i++; return neg?-v:v; }
+    if(/[a-z]/i.test(c)){ let j=i; while(/[a-z0-9]/i.test(peek()))i++; const id=s.slice(j,i);
+      if(peek()==="("){ i++; const a=sum(env); if(peek()===","){i++; const b=sum(env); i++; const d=Math.abs(b)>1e-3?b:(b>=0?1e-3:-1e-3); return a/d;} i++; return F[id](a); }
+      return env[id]||0; }
+    let j=i; while(/[0-9.eE+\-]/.test(peek())){ if((peek()==="+"||peek()==="-")&&i>j&&!/[eE]/.test(s[i-1]))break; i++; }
+    return parseFloat(s.slice(j,i));
+  }
+  return env=>{ i=0; return sum(env); };
 }
 
-function setProgress(pct, hide = false) {
-  const bar = $("status-progress");
-  bar.style.width = pct + "%";
-  if (hide) setTimeout(() => { bar.style.opacity = "0"; }, 400);
-  else bar.style.opacity = "1";
+// ---------- WebGL field render: compile render_program.source VERBATIM ----------
+const VERT="attribute vec2 p;void main(){gl_Position=vec4(p,0.0,1.0);}";
+function hexToRGB(h){ h=h.replace("#",""); return [parseInt(h.slice(0,2),16)/255,parseInt(h.slice(2,4),16)/255,parseInt(h.slice(4,6),16)/255]; }
+function compile(gl,type,src){ const sh=gl.createShader(type); gl.shaderSource(sh,src); gl.compileShader(sh);
+  if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(sh)); return sh; }
+
+function renderField(canvas, rp){
+  const gl=canvas.getContext("webgl")||canvas.getContext("experimental-webgl");
+  if(!gl) throw new Error("no WebGL");
+  const prog=gl.createProgram();
+  gl.attachShader(prog,compile(gl,gl.VERTEX_SHADER,VERT));
+  gl.attachShader(prog,compile(gl,gl.FRAGMENT_SHADER,rp.source));
+  gl.linkProgram(prog);
+  if(!gl.getProgramParameter(prog,gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
+  gl.useProgram(prog);
+  const buf=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,buf);
+  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
+  const loc=gl.getAttribLocation(prog,"p"); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
+  const pal=((rp.uniforms.u_palette&&rp.uniforms.u_palette.value)||[]).flatMap(hexToRGB);
+  const vr=rp.value_range||[-1,1];
+  const period=(rp.domain&&rp.domain.period)||1.0, animatable=!(rp.domain&&rp.domain.animatable===false);
+  const U=n=>gl.getUniformLocation(prog,n);
+  function frame(ts){
+    const w=canvas.clientWidth, h=canvas.clientHeight; if(canvas.width!==w){canvas.width=w;canvas.height=h;}
+    gl.viewport(0,0,canvas.width,canvas.height);
+    gl.uniform2f(U("u_resolution"),canvas.width,canvas.height);
+    gl.uniform2f(U("u_value_range"),vr[0],vr[1]);
+    if(pal.length) gl.uniform3fv(U("u_palette[0]"),new Float32Array(pal));
+    gl.uniform1f(U("u_time"),animatable?((ts/1000)%period):0.0);
+    gl.drawArrays(gl.TRIANGLES,0,3);
+    RAF=requestAnimationFrame(frame);
+  }
+  RAF=requestAnimationFrame(frame);
 }
 
-/* ── hex → rgb utility ── */
-function hexToRgb(hex) {
-  const h = hex.replace("#", "");
-  return [
-    parseInt(h.slice(0, 2), 16) / 255,
-    parseInt(h.slice(2, 4), 16) / 255,
-    parseInt(h.slice(4, 6), 16) / 255,
-  ];
+// ---------- Canvas2D point render from a recipe ----------
+function recipePoints(r){
+  const out=[]; const m=r.mode;
+  if(m==="spiral"){ const a=r.angle_deg*Math.PI/180; for(let i=0;i<r.count;i++){ const rr=r.scale*Math.sqrt(i); out.push([rr*Math.cos(i*a),rr*Math.sin(i*a),i]); } }
+  else if(m==="iterated"){ const ux=makeEval(r.update_x),uy=makeEval(r.update_y); let x=r.init[0],y=r.init[1],idx=0;
+    for(let step=0;step<r.count;step++){ const nx=ux({x,y}),ny=uy({x,y}); x=nx;y=ny; if(step<r.transient)continue; out.push([x,y,idx++]); } }
+  else if(m==="parametric"){ const ex=makeEval(r.x),ey=makeEval(r.y),n=Math.max(2,r.count);
+    for(let i=0;i<n;i++){ const t=r.t_max*i/(n-1); out.push([ex({t}),ey({t}),i]); } }
+  return out;
+}
+function renderPoints(canvas, rp, palette){
+  const g=canvas.getContext("2d"); const W=canvas.width=canvas.clientWidth, H=canvas.height=canvas.clientHeight;
+  g.clearRect(0,0,W,H);
+  const pts=recipePoints(rp.recipe); if(!pts.length)return;
+  const xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]);
+  const minx=Math.min(...xs),maxx=Math.max(...xs),miny=Math.min(...ys),maxy=Math.max(...ys);
+  const sp=Math.max(maxx-minx,maxy-miny,1e-6), pad=W*0.08, sc=(W-2*pad)/sp;
+  const ox=(W-(maxx-minx)*sc)/2-minx*sc, oy=(H-(maxy-miny)*sc)/2-miny*sc;
+  for(const [x,y,i] of pts){ g.fillStyle=palette[Math.floor(i/pts.length*palette.length)%palette.length]||"#e8e8f0";
+    g.beginPath(); g.arc(ox+x*sc,oy+y*sc,1.5,0,7); g.fill(); }
 }
 
-/* ── theme the document from a palette ── */
-function applyPalette(palette) {
-  if (!palette || !palette.length) return;
-  const root = document.documentElement;
-  palette.forEach((hex, i) => {
-    root.style.setProperty(`--p${i}`, hex);
-  });
-  // darken the first color for background
-  const [r, g, b] = hexToRgb(palette[0]);
-  const bg = `rgb(${Math.round(r * 22)}, ${Math.round(g * 20)}, ${Math.round(b * 32)})`;
-  root.style.setProperty("--c0", bg);
-  root.style.setProperty("--c1", `rgb(${Math.round(r * 30)}, ${Math.round(g * 28)}, ${Math.round(b * 44)})`);
-  document.body.style.background = bg;
+// ---------- audio: synthesize from audio_program ----------
+function playAudio(ap){
+  stopAudio();
+  const Ctx=window.AudioContext||window.webkitAudioContext; if(!Ctx){log("no Web Audio",true);return;}
+  AUDIO=new Ctx(); const dur=4.0, t0=AUDIO.currentTime;
+  const master=AUDIO.createGain(); master.connect(AUDIO.destination);
+  const env=ap.envelope||{attack:0.18,release:0.30};
+  master.gain.setValueAtTime(0,t0);
+  master.gain.linearRampToValueAtTime(0.9,t0+dur*(env.attack||0.18));
+  master.gain.setValueAtTime(0.9,t0+dur*(1-(env.release||0.3)));
+  master.gain.linearRampToValueAtTime(0,t0+dur);
+  const curve=ap.pitch_curve&&ap.pitch_curve.length?ap.pitch_curve:[ap.base_freq||220];
+  for(const o of (ap.oscillators||[])){
+    const osc=AUDIO.createOscillator(), g=AUDIO.createGain();
+    g.gain.value=o.gain||0.2; osc.connect(g); g.connect(master);
+    const fc=new Float32Array(curve.map(f=>Math.max(20,f*(o.harmonic||1))));
+    try{ osc.frequency.setValueCurveAtTime(fc,t0,dur); }catch(e){ osc.frequency.value=fc[0]; }
+    osc.start(t0); osc.stop(t0+dur);
+  }
+  log("♪ playing "+(ap.oscillators||[]).length+" partials, sweep "+curve.length+" steps");
 }
-
-/* ═══════════════════════════════
-   WEBGL RENDERER
-   ═══════════════════════════════ */
-const Renderer = (() => {
-  let gl = null;
-  let program = null;
-  let rafId = null;
-  let startTime = performance.now();
-  let currentGen = null;
-  let currentParams = null;
-  let paletteColors = [];
-  let canvas = null;
-
-  /* ── phyllotaxis canvas 2D (not WebGL) ── */
-  let ctx2d = null;
-  let phylloRAF = null;
-
-  function initGL() {
-    canvas = $("render-canvas");
-    try {
-      gl = canvas.getContext("webgl2") || canvas.getContext("webgl");
-    } catch (_) { gl = null; }
-    return !!gl;
-  }
-
-  function resize() {
-    if (!canvas) return;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width  = canvas.clientWidth  * dpr;
-    canvas.height = canvas.clientHeight * dpr;
-    if (gl) gl.viewport(0, 0, canvas.width, canvas.height);
-  }
-
-  /* ── compile shader ── */
-  function compileShader(type, src) {
-    const s = gl.createShader(type);
-    gl.shaderSource(s, src);
-    gl.compileShader(s);
-    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
-      console.error("Shader compile error:", gl.getShaderInfoLog(s));
-      gl.deleteShader(s);
-      return null;
-    }
-    return s;
-  }
-
-  function buildProgram(fragSrc) {
-    const vertSrc = `
-      attribute vec2 a_pos;
-      void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }
-    `;
-    const vert = compileShader(gl.VERTEX_SHADER, vertSrc);
-    const frag = compileShader(gl.FRAGMENT_SHADER, fragSrc);
-    if (!vert || !frag) return null;
-    const prog = gl.createProgram();
-    gl.attachShader(prog, vert);
-    gl.attachShader(prog, frag);
-    gl.linkProgram(prog);
-    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
-      console.error("Program link error:", gl.getProgramInfoLog(prog));
-      return null;
-    }
-    // quad
-    const buf = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
-    const loc = gl.getAttribLocation(prog, "a_pos");
-    gl.enableVertexAttribArray(loc);
-    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-    return prog;
-  }
-
-  /* palette as a vec3 array literal for GLSL */
-  function paletteSrc(colors) {
-    const n = Math.min(colors.length, 8);
-    const entries = colors.slice(0, n).map(c => {
-      const [r, g, b] = hexToRgb(c);
-      return `vec3(${r.toFixed(4)},${g.toFixed(4)},${b.toFixed(4)})`;
-    }).join(",");
-    return { n, src: `vec3 palette[${n}] = vec3[${n}](${entries});` };
-  }
-
-  /* sample palette via smooth interpolation */
-  const paletteSampleFn = `
-vec3 samplePalette(float t, int n, vec3 palette[8]) {
-  t = clamp(t, 0.0, 1.0);
-  float fi = t * float(n - 1);
-  int i0 = int(fi);
-  int i1 = min(i0 + 1, n - 1);
-  float f = fi - float(i0);
-  return mix(palette[i0], palette[i1], f);
-}
-`;
-
-  /* ── GYROID SHADER ── */
-  function gyroidFragSrc(colors) {
-    const { n, src } = paletteSrc(colors);
-    return `
-precision highp float;
-uniform vec2  u_res;
-uniform float u_time;
-uniform float u_freq;
-
-${paletteSampleFn}
-
-void main() {
-  vec2 uv = (gl_FragCoord.xy / u_res) * 2.0 - 1.0;
-  uv.x *= u_res.x / u_res.y;
-
-  // breathing z: slow oscillation so the surface shifts over time
-  float z = u_time * 0.22;
-
-  float scale = u_freq * 2.4;
-  float x = uv.x * scale;
-  float y = uv.y * scale;
-  float zv = z;
-
-  // gyroid implicit surface: sin(x)cos(y) + sin(y)cos(z) + sin(z)cos(x)
-  float g = sin(x) * cos(y) + sin(y) * cos(zv) + sin(zv) * cos(x);
-
-  // second layer at shifted phase for depth
-  float g2 = sin(x + 1.1) * cos(y + 0.7) + sin(y + 0.9) * cos(zv + 1.3) + sin(zv + 0.5) * cos(x + 0.6);
-
-  float t = (g * 0.55 + g2 * 0.35 + 1.0) * 0.5;
-  t = fract(t + u_time * 0.04);
-
-  ${src}
-  vec3 col = samplePalette(t, ${n}, palette);
-
-  // subtle dark bands at zero crossings (makes the surface legible)
-  float band = abs(g) < 0.12 ? 0.55 : 1.0;
-  col *= band;
-
-  // vignette from center
-  float vig = 1.0 - 0.5 * length(uv) * 0.55;
-  col *= vig;
-
-  gl_FragColor = vec4(col, 1.0);
-}`;
-  }
-
-  /* ── QUASICRYSTAL SHADER ── */
-  function quasiFragSrc(colors, waves) {
-    const { n, src } = paletteSrc(colors);
-    const wv = Math.max(3, Math.min(24, waves || 7));
-    return `
-precision highp float;
-uniform vec2  u_res;
-uniform float u_time;
-uniform float u_waves;
-
-${paletteSampleFn}
-
-void main() {
-  vec2 uv = (gl_FragCoord.xy / u_res) * 2.0 - 1.0;
-  uv.x *= u_res.x / u_res.y;
-
-  float scale = 3.2;
-  float acc = 0.0;
-  int w = ${wv};
-
-  for (int k = 0; k < ${wv}; k++) {
-    float ang = 2.0 * 3.14159265 * float(k) / float(${wv});
-    float kx = cos(ang);
-    float ky = sin(ang);
-    acc += cos(kx * uv.x * scale + ky * uv.y * scale + u_time * 0.3);
-  }
-
-  // normalize to 0..1, allow wrapping for psychedelic iridescence
-  float t = fract((acc / float(${wv}) + 1.0) * 0.5 + u_time * 0.03);
-
-  ${src}
-  vec3 col = samplePalette(t, ${n}, palette);
-
-  // rim dark
-  float vig = 1.0 - 0.38 * pow(length(uv * 0.7), 2.0);
-  col *= vig;
-
-  gl_FragColor = vec4(col, 1.0);
-}`;
-  }
-
-  /* ── run a WebGL shader loop ── */
-  function runShader(fragSrc, uniforms) {
-    if (program) gl.deleteProgram(program);
-    program = buildProgram(fragSrc);
-    if (!program) return;
-    gl.useProgram(program);
-
-    function frame(ts) {
-      resize();
-      const t = (ts - startTime) / 1000.0;
-      gl.useProgram(program);
-      const resLoc = gl.getUniformLocation(program, "u_res");
-      const timeLoc = gl.getUniformLocation(program, "u_time");
-      gl.uniform2f(resLoc, canvas.width, canvas.height);
-      gl.uniform1f(timeLoc, t);
-      // generator-specific uniforms
-      for (const [name, val] of Object.entries(uniforms)) {
-        const loc = gl.getUniformLocation(program, name);
-        if (loc) gl.uniform1f(loc, val);
-      }
-      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-      rafId = requestAnimationFrame(frame);
-    }
-    rafId = requestAnimationFrame(frame);
-  }
-
-  /* ── PHYLLOTAXIS (Canvas 2D) ── */
-  function runPhyllotaxis(angleDeg, colors) {
-    const cvs = canvas;
-    ctx2d = cvs.getContext("2d");
-    let rotation = 0;
-    const N = 900;
-    const C = 9; // scale factor
-
-    function frame() {
-      resize();
-      const w = cvs.width;
-      const h = cvs.height;
-      const cx = w / 2;
-      const cy = h / 2;
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const dot = 2.2 * dpr;
-
-      ctx2d.clearRect(0, 0, w, h);
-
-      // dark background tinted by palette
-      const [pr, pg, pb] = hexToRgb(colors[0]);
-      ctx2d.fillStyle = `rgb(${Math.round(pr*18)}, ${Math.round(pg*16)}, ${Math.round(pb*26)})`;
-      ctx2d.fillRect(0, 0, w, h);
-
-      ctx2d.save();
-      ctx2d.translate(cx, cy);
-      ctx2d.rotate(rotation);
-
-      const angRad = (angleDeg * Math.PI) / 180;
-      const maxR = Math.min(cx, cy) * 0.88;
-
-      for (let i = 0; i < N; i++) {
-        const r = C * Math.sqrt(i);
-        const theta = i * angRad;
-        const px = r * Math.cos(theta);
-        const py = r * Math.sin(theta);
-        if (Math.abs(px) > maxR || Math.abs(py) > maxR) continue;
-
-        const t = i / N;
-        const ci = Math.min(Math.floor(t * (colors.length - 1)), colors.length - 2);
-        const frac = t * (colors.length - 1) - ci;
-        const c0 = hexToRgb(colors[ci]);
-        const c1 = hexToRgb(colors[ci + 1]);
-        const cr = Math.round((c0[0] + (c1[0] - c0[0]) * frac) * 255);
-        const cg = Math.round((c0[1] + (c1[1] - c0[1]) * frac) * 255);
-        const cb = Math.round((c0[2] + (c1[2] - c0[2]) * frac) * 255);
-
-        // size tapers toward center
-        const sizeMod = 0.5 + 0.5 * (i / N);
-        const alpha = 0.55 + 0.45 * (i / N);
-
-        ctx2d.beginPath();
-        ctx2d.arc(px, py, dot * sizeMod, 0, Math.PI * 2);
-        ctx2d.fillStyle = `rgba(${cr},${cg},${cb},${alpha.toFixed(2)})`;
-        ctx2d.fill();
-      }
-      ctx2d.restore();
-
-      rotation += 0.0004;
-      rafId = requestAnimationFrame(frame);
-    }
-    rafId = requestAnimationFrame(frame);
-  }
-
-  /* ── SVG fallback ── */
-  function showSvgFallback(svgString) {
-    const fb = $("svg-fallback");
-    fb.innerHTML = svgString || "";
-    fb.style.display = "flex";
-  }
-  function hideSvgFallback() {
-    const fb = $("svg-fallback");
-    fb.style.display = "none";
-    fb.innerHTML = "";
-  }
-
-  /* ── public API ── */
-  return {
-    get webglAvailable() { return !!gl; },
-
-    init() {
-      return initGL();
-    },
-
-    render(params, colors) {
-      // stop prior loop
-      if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
-      if (program) { gl && gl.deleteProgram(program); program = null; }
-      ctx2d = null;
-      hideSvgFallback();
-      startTime = performance.now();
-      currentGen = params.generator;
-      currentParams = params;
-      paletteColors = colors || params.palette || [];
-      resize();
-
-      const gen = params.generator;
-
-      if (gen === "gyroid") {
-        if (!gl) return false;
-        runShader(gyroidFragSrc(paletteColors), { u_freq: params.freq || 1.0 });
-        return true;
-      }
-
-      if (gen === "quasicrystal") {
-        if (!gl) return false;
-        runShader(quasiFragSrc(paletteColors, params.waves || 7), { u_waves: params.waves || 7 });
-        return true;
-      }
-
-      if (gen === "phyllotaxis") {
-        // phyllotaxis runs on canvas 2D — always available
-        if (gl) {
-          // disable WebGL context so canvas 2D can take over
-          // We swap the rendering context by switching to 2D on the canvas
-          // WebGL and 2D share the canvas; after getContext("webgl"), we can't get "2d"
-          // so for phyllotaxis we draw via 2D on the same element by releasing WebGL
-          // (in practice, both coexist if we draw 2D overlaid — but cleanest: use 2D directly
-          //  when the GL context is active we must use gl.scissor to clear + then draw 2D)
-          // Actually: after a WebGL context is acquired, getContext("2d") returns null.
-          // Solution: use a separate overlay canvas for 2D phyllotaxis.
-        }
-        runPhyllotaxis(params.angle_deg || 137.5, paletteColors);
-        return true;
-      }
-
-      return false;
-    },
-
-    renderFallback(svgLayer, colors) {
-      if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
-      if (program) { gl && gl.deleteProgram(program); program = null; }
-      const svgString = svgLayer && svgLayer.artifact && svgLayer.artifact.content;
-      if (svgString) showSvgFallback(svgString);
-      // tint background
-      if (colors && colors.length) {
-        const [r, g, b] = hexToRgb(colors[0]);
-        $("render-canvas").style.opacity = "0.05";
-      }
-    },
-
-    stop() {
-      if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
-    },
-  };
-})();
-
-/* ═══════════════════════════════
-   WEB AUDIO ENGINE
-   ═══════════════════════════════ */
-const AudioEngine = (() => {
-  let ctx = null;
-  let masterGain = null;
-  let oscillators = [];
-  let isPlaying = false;
-  let currentParams = null;
-  let stepIndex = 0;
-  let stepTimer = null;
-
-  function ensureCtx() {
-    if (!ctx) {
-      ctx = new (window.AudioContext || window.webkitAudioContext)();
-      masterGain = ctx.createGain();
-      masterGain.gain.setValueAtTime(0.0, ctx.currentTime);
-      masterGain.connect(ctx.destination);
-    }
-    if (ctx.state === "suspended") ctx.resume();
-  }
-
-  function stopOscillators() {
-    oscillators.forEach(o => {
-      try { o.osc.stop(); } catch (_) {}
-      o.gain.disconnect();
-    });
-    oscillators = [];
-  }
-
-  function startFromParams(params, stepIdx) {
-    if (!params) return;
-    ensureCtx();
-    stopOscillators();
-
-    const pitch_steps = params.pitch_steps || [];
-    const partials = params.partials || [];
-    const env = params.envelope || { attack: 0.2, release: 0.4 };
-
-    // pick the pitch for this refinement step
-    const baseFreq = pitch_steps[stepIdx] || params.base_freq || 220;
-
-    partials.forEach(({ harmonic, weight }) => {
-      const freq = baseFreq * harmonic;
-      if (freq > 18000) return; // beyond hearing
-
-      const osc = ctx.createOscillator();
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(freq, ctx.currentTime);
-
-      const gainNode = ctx.createGain();
-      gainNode.gain.setValueAtTime(0, ctx.currentTime);
-      gainNode.gain.linearRampToValueAtTime(
-        weight * 0.18,
-        ctx.currentTime + (env.attack || 0.2)
-      );
-
-      osc.connect(gainNode);
-      gainNode.connect(masterGain);
-      osc.start();
-      oscillators.push({ osc, gain: gainNode });
-    });
-
-    // fade master in
-    masterGain.gain.cancelScheduledValues(ctx.currentTime);
-    masterGain.gain.setValueAtTime(masterGain.gain.value, ctx.currentTime);
-    masterGain.gain.linearRampToValueAtTime(0.7, ctx.currentTime + (env.attack || 0.2));
-  }
-
-  function advanceStep() {
-    if (!currentParams || !isPlaying) return;
-    const steps = currentParams.pitch_steps || [];
-    stepIndex = (stepIndex + 1) % Math.max(steps.length, 1);
-    startFromParams(currentParams, stepIndex);
-  }
-
-  return {
-    load(params) {
-      currentParams = params;
-      stepIndex = 0;
-    },
-
-    play() {
-      if (isPlaying) return;
-      isPlaying = true;
-      ensureCtx();
-      startFromParams(currentParams, stepIndex);
-      // cycle through pitch_steps every ~3s to re-enact the refinement sonically
-      stepTimer = setInterval(() => advanceStep(), 3200);
-      $("audio-btn").classList.add("playing");
-      $("audio-btn").innerHTML = "&#9646;&#9646;";
-    },
-
-    stop() {
-      if (!isPlaying) return;
-      isPlaying = false;
-      clearInterval(stepTimer);
-      if (masterGain && ctx) {
-        const env = (currentParams && currentParams.envelope) || { release: 0.4 };
-        masterGain.gain.linearRampToValueAtTime(0.0, ctx.currentTime + (env.release || 0.4));
-        setTimeout(() => stopOscillators(), ((env.release || 0.4) * 1000 + 100));
-      }
-      $("audio-btn").classList.remove("playing");
-      $("audio-btn").innerHTML = "&#9654;";
-    },
-
-    toggle() {
-      isPlaying ? this.stop() : this.play();
-    },
-
-    get playing() { return isPlaying; },
-  };
-})();
-
-/* ═══════════════════════════════
-   UI — PANEL POPULATION
-   ═══════════════════════════════ */
-function renderPalette(palette) {
-  const row = $("palette-row");
-  row.innerHTML = "";
-  (palette || []).forEach(hex => {
-    const s = el("div", "swatch");
-    s.style.background = hex;
-    s.title = hex;
-    row.appendChild(s);
-  });
-}
-
-function renderTrajectory(steps) {
-  const container = $("trajectory");
-  container.innerHTML = "";
-
-  if (!steps || !steps.length) {
-    const none = el("div");
-    none.style.cssText = "padding:8px 0;color:var(--text-muted);font-size:10px;";
-    none.textContent = "no trajectory data";
-    container.appendChild(none);
-    return;
-  }
-
-  steps.forEach((step, idx) => {
-    const row = el("div", "traj-step");
-
-    const idxEl = el("span", "traj-step-idx");
-    idxEl.textContent = step.index ?? idx;
-    row.appendChild(idxEl);
-
-    const body = el("div", "traj-step-body");
-
-    // score bar
-    const barWrap = el("div", "traj-score-bar");
-    const fill = el("div", "traj-score-fill");
-    fill.style.width = "0%";
-    const pct = Math.round((step.score || 0) * 100);
-
-    // color the bar based on score
-    const scorePct = step.score || 0;
-    const r = Math.round((1 - scorePct) * 220);
-    const g = Math.round(scorePct * 180);
-    fill.style.background = `rgb(${r},${g},120)`;
-
-    barWrap.appendChild(fill);
-    body.appendChild(barWrap);
-
-    // verdicts
-    const verdicts = step.verdicts || [];
-    verdicts.forEach(v => {
-      const vRow = el("div", "traj-verdict");
-      const dot = el("span", `tag-dot tag-${v.tag}`);
-      vRow.appendChild(dot);
-      const tagEl = el("span", `verdict-tag color-${v.tag}`);
-      tagEl.textContent = v.tag;
-      vRow.appendChild(tagEl);
-      const crit = el("span");
-      crit.style.cssText = "color:var(--text-muted);font-size:8px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
-      crit.textContent = v.criterion;
-      vRow.appendChild(crit);
-      const score = el("span", "traj-score-num");
-      score.textContent = (v.score || step.score || 0).toFixed(4);
-      vRow.appendChild(score);
-      body.appendChild(vRow);
-    });
-
-    if (!verdicts.length) {
-      const vRow = el("div", "traj-verdict");
-      const score = el("span", "traj-score-num");
-      score.textContent = (step.score || 0).toFixed(4);
-      vRow.appendChild(score);
-      body.appendChild(vRow);
-    }
-
-    row.appendChild(body);
-    container.appendChild(row);
-
-    // stagger animation
-    setTimeout(() => {
-      row.classList.add("visible");
-      // animate the bar after the row appears
-      setTimeout(() => { fill.style.width = pct + "%"; }, 50);
-    }, idx * 80);
-  });
-}
-
-function renderReceipt(receipt, scene) {
-  const container = $("receipt");
-  container.innerHTML = "";
-
-  if (!receipt) return;
-
-  const rows = [
-    ["seed",       String(receipt.seed ?? "—")],
-    ["score",      (receipt.final_score ?? "—").toString(), true],
-    ["scene id",   (receipt.scene_id || "—").slice(0, 12) + "…"],
-    ["organs",     (receipt.organ_ids || []).length + " wired"],
-    ["schema",     receipt.schema_version || "—"],
-    ["author",     receipt.author || "—"],
-  ];
-
-  rows.forEach(([k, v, highlight]) => {
-    const row = el("div", "receipt-row");
-    const key = el("span", "receipt-key");
-    key.textContent = k;
-    const val = el("span", "receipt-val" + (highlight ? " highlight" : ""));
-    val.textContent = v;
-    row.appendChild(key);
-    row.appendChild(val);
-    container.appendChild(row);
-  });
-
-  // organ list (compact)
-  if (receipt.organ_ids && receipt.organ_ids.length) {
-    const row = el("div", "receipt-row");
-    row.style.flexDirection = "column";
-    row.style.alignItems = "flex-start";
-    row.style.gap = "3px";
-    const key = el("span", "receipt-key");
-    key.textContent = "organ ids";
-    row.appendChild(key);
-    receipt.organ_ids.forEach(oid => {
-      const tag = el("span");
-      tag.style.cssText = "color:var(--text-muted);font-size:8px;padding-left:8px;";
-      tag.textContent = oid;
-      row.appendChild(tag);
-    });
-    container.appendChild(row);
+function stopAudio(){ if(AUDIO){try{AUDIO.close();}catch(e){} AUDIO=null;} }
+
+// ---------- render a World into the stage ----------
+function clearStage(){ if(RAF){cancelAnimationFrame(RAF);RAF=0;} const s=$("#stage");
+  [...s.querySelectorAll("canvas,.svgwrap")].forEach(n=>n.remove()); }
+function blendCSS(b){ return b==="add"?"lighten":(["screen","multiply","normal"].includes(b)?b:"normal"); }
+
+function renderLayer(layer, palette){
+  const s=$("#stage"); const rp=layer.render_program;
+  if(rp.target==="glsl-fragment"){
+    const c=document.createElement("canvas"); c.style.mixBlendMode=blendCSS(layer.blend); s.appendChild(c);
+    try{ renderField(c,rp); }
+    catch(e){ log("shader fail ("+layer.organ_id+"): "+e.message,true); c.remove();
+      if(layer.preview){ const d=document.createElement("div"); d.className="svgwrap"; d.innerHTML=layer.preview.content;
+        const svg=d.querySelector("svg"); if(svg){svg.setAttribute("width","100%");svg.setAttribute("height","100%");} s.appendChild(d);} }
+  }else{
+    const c=document.createElement("canvas"); c.style.mixBlendMode=blendCSS(layer.blend); s.appendChild(c);
+    requestAnimationFrame(()=>renderPoints(c,rp,palette));
   }
 }
 
-function updateHeader(scene) {
-  $("scene-title").textContent = scene.title || "Untitled";
-  $("scene-meta").textContent = `seed ${scene.receipt?.seed ?? "—"}  ·  id ${(scene.id || "").slice(0, 10)}`;
+function showWorld(w){
+  clearStage(); stopAudio(); window.__world=w;
+  const pal=w.palette||[];
+  if(pal[2])document.documentElement.style.setProperty("--a",pal[2]);
+  if(pal[3])document.documentElement.style.setProperty("--b",pal[3]);
+  if(pal[4])document.documentElement.style.setProperty("--c",pal[4]);
+  $("#worldTitle").textContent=w.title||"world";
+  $("#swatches").innerHTML=pal.map(c=>`<i style="background:${c}"></i>`).join("");
+  $("#badge").textContent=w.layers.map(l=>l.organ_id+"·"+l.render_program.target.split("-")[0]).join("  +  ");
+  [...w.layers].sort((a,b)=>a.z-b.z).forEach(l=>renderLayer(l,pal));
+  const t=w.trajectory, acc=t.steps[t.accepted_index]||t.steps[t.steps.length-1]||{margins:{}};
+  $("#axes").innerHTML=Object.entries(acc.margins||{}).map(([k,v])=>
+    `<div class="axis ${k===acc.weakest?'weak':''}"><span class="name">${k}</span>`+
+    `<span class="bar"><span class="fill" style="width:${Math.round(v*100)}%"></span></span>`+
+    `<span class="val">${v.toFixed(3)}</span></div>`).join("")||"<div class=receipt>—</div>";
+  const tl=w.timeline;
+  $("#timeline").innerHTML = tl ? (
+    `period ${tl.period}s<br>`+
+    `continuity <span class="tag ${tl.continuity.tag}">${tl.continuity.tag}</span> ${tl.continuity.score}<br>`+
+    `on-criterion <span class="tag ${tl.on_criterion.tag}">${tl.on_criterion.tag}</span> ${tl.on_criterion.score}`
+  ) : "static (this generator is not animatable in v1)";
+  $("#meta").innerHTML = (w.composition?`composition <span class="tag ${w.composition.tag}">${w.composition.tag}</span> ${w.composition.score}<br>`:"")
+    + `converged: ${t.converged} · final score ${w.receipt.final_score}`;
+  const r=w.receipt;
+  $("#receipt").innerHTML=`id ${r.scene_id}<br>seed ${r.seed} · organs ${r.organ_ids.join(", ")}<br>`+
+    `expr sha: ${r.artifact_shas.join(" · ")}`;
+  log("world "+w.id+" ("+w.layers.length+" layer"+(w.layers.length>1?"s":"")+")");
 }
 
-/* ═══════════════════════════════
-   SCENE LOADING
-   ═══════════════════════════════ */
-let activeScene = null;
+// ---------- wiring ----------
+GENS.forEach(g=>{ const o=document.createElement("option"); o.textContent=g; $("#gen").appendChild(o); });
+$("#gen").value="gyroid";
 
-async function loadScene(id) {
-  setProgress(20);
-  try {
-    const resp = await fetch(`${API}/scene/${id}`);
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const scene = await resp.json();
-    setProgress(70);
-    await renderScene(scene);
-    setProgress(100, true);
-    return scene;
-  } catch (err) {
-    toast(`failed to load scene: ${err.message}`);
-    setProgress(100, true);
-    return null;
-  }
+async function loadGallery(){
+  try{ const d=await getJSON("/gallery"); $("#gallery").innerHTML="";
+    d.scenes.forEach(s=>{ const el=document.createElement("div"); el.className="card";
+      el.innerHTML=`<div class="t">${s.title}</div><div class="m">${s.generator} · ${s.converged?"✓":"~"} ${s.score}</div>`+
+        `<div class="strip">${(s.palette||[]).map(c=>`<i style="background:${c}"></i>`).join("")}</div>`;
+      el.onclick=async()=>{ try{ showWorld(await getJSON("/scene/"+s.id)); }catch(e){log(e.message,true);} };
+      $("#gallery").appendChild(el); });
+    log("gallery: "+d.scenes.length+" worlds");
+  }catch(e){ log("gallery failed: "+e.message+" (is the server running?)",true); }
 }
+$("#run").onclick=async()=>{ try{ showWorld(await postJSON("/simulate",
+  {seed:+$("#seed").value,generator:$("#gen").value,scheme:$("#scheme").value})); }catch(e){log(e.message,true);} };
+$("#composeBtn").onclick=async()=>{ try{ showWorld(await postJSON("/compose",
+  {seed:+$("#seed").value,organs:["gyroid","phyllotaxis"],scheme:$("#scheme").value})); }catch(e){log(e.message,true);} };
+$("#play").onclick=()=>{ const w=window.__world; if(w&&w.audio_program)playAudio(w.audio_program); else log("no audio_program",true); };
+$("#stop").onclick=stopAudio;
 
-async function renderScene(scene) {
-  activeScene = scene;
-  AudioEngine.stop();
-
-  // theme
-  const palette = scene.palette || [];
-  applyPalette(palette);
-  renderPalette(palette);
-
-  // header
-  updateHeader(scene);
-
-  // find params layer
-  const paramsLayer = (scene.layers || []).find(l => l.role === "params");
-  const geometryLayer = (scene.layers || []).find(l => l.role === "geometry");
-
-  let rendered = false;
-
-  if (paramsLayer && paramsLayer.artifact && paramsLayer.artifact.content) {
-    let params;
-    try {
-      params = JSON.parse(paramsLayer.artifact.content);
-    } catch (_) {
-      params = null;
-    }
-
-    if (params) {
-      // update generator label
-      $("gen-name").textContent = params.generator || "—";
-
-      // update score display
-      const scores = params.scores || [];
-      const finalScore = scores[scores.length - 1] || scene.receipt?.final_score || 0;
-      $("score-val").textContent = finalScore.toFixed(4);
-
-      // render live
-      if (Renderer.webglAvailable || params.generator === "phyllotaxis") {
-        rendered = Renderer.render(params, palette);
-      }
-
-      if (!rendered && geometryLayer) {
-        $("no-webgl-notice").style.display = "block";
-        Renderer.renderFallback(geometryLayer, palette);
-        rendered = true;
-      }
-    }
-  }
-
-  if (!rendered && geometryLayer) {
-    $("no-webgl-notice").style.display = "block";
-    Renderer.renderFallback(geometryLayer, palette);
-  }
-
-  // trajectory
-  renderTrajectory(scene.trajectory?.steps || []);
-
-  // receipt
-  renderReceipt(scene.receipt, scene);
-
-  // audio
-  if (scene.audio && scene.audio.content) {
-    let audioParams;
-    try {
-      audioParams = JSON.parse(scene.audio.content);
-    } catch (_) {
-      audioParams = null;
-    }
-    if (audioParams) {
-      AudioEngine.load(audioParams);
-      $("audio-label").textContent = `base ${Math.round(audioParams.base_freq)} Hz · ${(audioParams.partials || []).length} partials\nfrom audio params`;
-    }
-  }
-
-  // mark active in gallery
-  document.querySelectorAll(".gallery-thumb").forEach(t => {
-    t.classList.toggle("active", t.dataset.id === scene.id);
-  });
-
-  $("render-canvas").style.opacity = "1";
-}
-
-/* ═══════════════════════════════
-   GALLERY RAIL
-   ═══════════════════════════════ */
-async function loadGallery() {
-  setProgress(10);
-  try {
-    const resp = await fetch(`${API}/gallery`);
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const data = await resp.json();
-    setProgress(40);
-    buildGalleryRail(data.scenes || []);
-
-    // load first scene
-    if (data.scenes && data.scenes.length) {
-      await loadScene(data.scenes[0].id);
-    }
-  } catch (err) {
-    toast(`could not reach studio-engine at ${API} — ${err.message}`, 6000);
-    setProgress(100, true);
-    // render demo scene to show the chamber works even offline
-    renderDemoScene();
-  }
-}
-
-function buildGalleryRail(scenes) {
-  const rail = $("gallery-rail");
-  rail.innerHTML = "";
-  scenes.forEach(s => {
-    const thumb = el("div", "gallery-thumb");
-    thumb.dataset.id = s.id;
-    thumb.title = s.title;
-    thumb.setAttribute("role", "button");
-    thumb.setAttribute("tabindex", "0");
-    thumb.setAttribute("aria-label", `Load scene: ${s.title}`);
-
-    // palette preview
-    const swatchWrap = el("div", "gallery-thumb-swatch");
-    (s.palette || []).slice(0, 6).forEach(hex => {
-      const d = el("div");
-      d.style.background = hex;
-      swatchWrap.appendChild(d);
-    });
-    thumb.appendChild(swatchWrap);
-
-    // label
-    const label = el("div", "gallery-thumb-label");
-    label.textContent = s.title;
-    thumb.appendChild(label);
-
-    thumb.addEventListener("click", () => loadScene(s.id));
-    thumb.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") loadScene(s.id); });
-    rail.appendChild(thumb);
-  });
-}
-
-/* ═══════════════════════════════
-   SIMULATE
-   ═══════════════════════════════ */
-async function simulate() {
-  const btn = $("simulate-btn");
-  btn.disabled = true;
-  btn.textContent = "simulating…";
-  setProgress(15);
-
-  const body = {
-    seed:      parseInt($("ctrl-seed").value, 10) || 0,
-    generator: $("ctrl-gen").value,
-    scheme:    $("ctrl-scheme").value,
-  };
-
-  try {
-    const resp = await fetch(`${API}/simulate`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const scene = await resp.json();
-    setProgress(80);
-    await renderScene(scene);
-    setProgress(100, true);
-    toast(`scene ready · seed ${body.seed} · ${body.generator}`);
-
-    // add to gallery rail if new
-    const existing = document.querySelector(`.gallery-thumb[data-id="${scene.id}"]`);
-    if (!existing) {
-      buildGalleryRail([{ id: scene.id, title: scene.title, palette: scene.palette }]);
-      // re-mark active
-      document.querySelectorAll(".gallery-thumb").forEach(t => {
-        t.classList.toggle("active", t.dataset.id === scene.id);
-      });
-    }
-  } catch (err) {
-    toast(`simulate failed: ${err.message}`);
-    setProgress(100, true);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "simulate";
-  }
-}
-
-/* ═══════════════════════════════
-   DEMO (offline fallback)
-   Shows the chamber renders correctly without a live server.
-   ═══════════════════════════════ */
-function renderDemoScene() {
-  const demoPalette = ["#7375cb","#8e7fd8","#a88ae3","#c295ec","#dca1f3","#f5adf9"];
-  applyPalette(demoPalette);
-  renderPalette(demoPalette);
-  $("scene-title").textContent = "Demo — offline mode";
-  $("scene-meta").textContent = "start the server: python -m studio_engine.server 8777";
-  $("gen-name").textContent = "phyllotaxis";
-  $("score-val").textContent = "0.9925";
-
-  // render a phyllotaxis directly
-  const demoParams = { generator: "phyllotaxis", angle_deg: 137.5077640, palette: demoPalette };
-  Renderer.render(demoParams, demoPalette);
-
-  // demo trajectory
-  const demoSteps = [
-    { index:0, score:0.7072, verdicts:[{ criterion:"golden_angle", tag:"unverifiable", score:0.7072 }] },
-    { index:1, score:0.8829, verdicts:[{ criterion:"golden_angle", tag:"unverifiable", score:0.8829 }] },
-    { index:2, score:0.9532, verdicts:[{ criterion:"golden_angle", tag:"verified",     score:0.9532 }] },
-    { index:3, score:0.9813, verdicts:[{ criterion:"golden_angle", tag:"verified",     score:0.9813 }] },
-    { index:4, score:0.9925, verdicts:[{ criterion:"golden_angle", tag:"verified",     score:0.9925 }] },
-  ];
-  renderTrajectory(demoSteps);
-
-  const demoReceipt = {
-    scene_id: "56173aa0475ea92b",
-    seed: 7,
-    organ_ids: ["phyllotaxis","palette.oklch","criterion.golden_angle","sonify.params","raster.png"],
-    final_score: 0.9925,
-    schema_version: "studio-engine/1",
-    author: "studio-engine",
-  };
-  renderReceipt(demoReceipt, null);
-
-  // demo audio
-  const demoAudio = {
-    base_freq: 373.74,
-    partials: [
-      { harmonic:1, weight:0.45 },
-      { harmonic:2, weight:0.27 },
-      { harmonic:3, weight:0.11 },
-      { harmonic:4, weight:0.07 },
-    ],
-    envelope: { attack:0.18, release:0.3 },
-    pitch_steps: [902, 1033, 1086, 1107, 1116],
-    scores: [0.7072, 0.8829, 0.9532, 0.9813, 0.9925],
-  };
-  AudioEngine.load(demoAudio);
-  $("audio-label").textContent = `base ${Math.round(demoAudio.base_freq)} Hz · ${demoAudio.partials.length} partials\noffline demo`;
-}
-
-/* ═══════════════════════════════
-   PHYLLOTAXIS — 2D CANVAS INIT
-   Problem: after acquiring a WebGL context on a canvas, you cannot
-   get a 2D context from the same canvas. Solution: for phyllotaxis
-   we draw via a tiny WebGL pass that mimics the 2D dot-plotting.
-   Actually, the cleanest approach: keep TWO canvases.
-   ═══════════════════════════════ */
-(function fixPhyllotaxisCanvas() {
-  // The main render-canvas is acquired as WebGL first.
-  // Phyllotaxis needs 2D. We overlay a second canvas for 2D work
-  // and route phyllotaxis there; WebGL shaders remain on #render-canvas.
-  const canvas2d = document.createElement("canvas");
-  canvas2d.id = "canvas-2d";
-  canvas2d.style.cssText = "position:fixed;inset:0;width:100%;height:100%;z-index:1;display:none;";
-  document.body.insertBefore(canvas2d, document.body.firstChild);
-
-  // Patch Renderer to use canvas2d for phyllotaxis
-  const _origRender = Renderer.render.bind(Renderer);
-  Renderer.render = function(params, colors) {
-    if (params.generator === "phyllotaxis") {
-      // hide GL canvas, show 2D canvas
-      $("render-canvas").style.display = "none";
-      canvas2d.style.display = "block";
-
-      // stop prior animation
-      if (Renderer._raf2d) { cancelAnimationFrame(Renderer._raf2d); Renderer._raf2d = null; }
-
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      function resize2d() {
-        canvas2d.width  = canvas2d.clientWidth  * dpr;
-        canvas2d.height = canvas2d.clientHeight * dpr;
-      }
-      resize2d();
-
-      const ctx = canvas2d.getContext("2d");
-      const N = 900;
-      const C = 9;
-      const angleDeg = params.angle_deg || 137.5077640;
-      const angRad = (angleDeg * Math.PI) / 180;
-      const palette = colors || params.palette || ["#7375cb","#f5adf9"];
-      let rotation = 0;
-
-      function frame() {
-        resize2d();
-        const w = canvas2d.width;
-        const h = canvas2d.height;
-        const cx = w / 2;
-        const cy = h / 2;
-        const dotR = 1.8 * dpr;
-        const maxR = Math.min(cx, cy) * 0.88;
-
-        // background
-        const [pr, pg, pb] = hexToRgb(palette[0]);
-        ctx.fillStyle = `rgb(${Math.round(pr*16)},${Math.round(pg*14)},${Math.round(pb*24)})`;
-        ctx.fillRect(0, 0, w, h);
-
-        ctx.save();
-        ctx.translate(cx, cy);
-        ctx.rotate(rotation);
-
-        for (let i = 0; i < N; i++) {
-          const r = C * Math.sqrt(i);
-          const theta = i * angRad;
-          const px = r * Math.cos(theta);
-          const py = r * Math.sin(theta);
-          if (px * px + py * py > maxR * maxR) continue;
-
-          const t = i / N;
-          const ci = Math.min(Math.floor(t * (palette.length - 1)), palette.length - 2);
-          const frac = t * (palette.length - 1) - ci;
-          const c0 = hexToRgb(palette[ci]);
-          const c1 = hexToRgb(palette[Math.min(ci + 1, palette.length - 1)]);
-          const cr = Math.round((c0[0] + (c1[0] - c0[0]) * frac) * 255);
-          const cg = Math.round((c0[1] + (c1[1] - c0[1]) * frac) * 255);
-          const cb = Math.round((c0[2] + (c1[2] - c0[2]) * frac) * 255);
-
-          const sizeMod = 0.4 + 0.6 * (i / N);
-          const alpha = (0.4 + 0.6 * (i / N)).toFixed(2);
-
-          ctx.beginPath();
-          ctx.arc(px, py, dotR * sizeMod, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(${cr},${cg},${cb},${alpha})`;
-          ctx.fill();
-        }
-        ctx.restore();
-        rotation += 0.00045;
-        Renderer._raf2d = requestAnimationFrame(frame);
-      }
-      Renderer._raf2d = requestAnimationFrame(frame);
-      return true;
-    }
-
-    // for GL generators: hide 2D canvas, show GL canvas
-    canvas2d.style.display = "none";
-    $("render-canvas").style.display = "block";
-    if (Renderer._raf2d) { cancelAnimationFrame(Renderer._raf2d); Renderer._raf2d = null; }
-    return _origRender(params, colors);
-  };
-
-  const _origStop = Renderer.stop.bind(Renderer);
-  Renderer.stop = function() {
-    if (Renderer._raf2d) { cancelAnimationFrame(Renderer._raf2d); Renderer._raf2d = null; }
-    _origStop();
-  };
-})();
-
-/* ═══════════════════════════════
-   INIT
-   ═══════════════════════════════ */
-(function init() {
-  // try WebGL
-  const webglOk = Renderer.init();
-  if (!webglOk) {
-    $("no-webgl-notice").style.display = "block";
-  }
-
-  // audio button
-  $("audio-btn").addEventListener("click", () => AudioEngine.toggle());
-
-  // simulate button
-  $("simulate-btn").addEventListener("click", simulate);
-
-  // seed input enter key
-  $("ctrl-seed").addEventListener("keydown", e => { if (e.key === "Enter") simulate(); });
-
-  // resize
-  window.addEventListener("resize", () => {
-    if (activeScene) {
-      // re-render current params layer after resize
-      const paramsLayer = (activeScene.layers || []).find(l => l.role === "params");
-      if (paramsLayer && paramsLayer.artifact && paramsLayer.artifact.content) {
-        try {
-          const params = JSON.parse(paramsLayer.artifact.content);
-          // shaders handle resize in their RAF loop; phyllotaxis does too
-        } catch (_) {}
-      }
-    }
-  });
-
-  // keyboard shortcuts
-  document.addEventListener("keydown", e => {
-    if (e.key === "a" || e.key === "A") AudioEngine.toggle();
-    if (e.key === " ") { e.preventDefault(); AudioEngine.toggle(); }
-  });
-
-  // start
-  loadGallery();
-})();
+loadGallery();
 </script>
 </body>
 </html>
