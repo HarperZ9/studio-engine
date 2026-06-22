@@ -5,6 +5,7 @@
 // binding — the coherence-membrane Certificate — between them. Later increments wire the live
 // re-check, the cohesion slider, and the generator switch into the same showWorld() spine.
 import { renderFrame, renderReasoning, describe } from "./render.js";
+import { recheckCertificate } from "./verdict.js";
 
 const $ = id => document.getElementById(id);
 
@@ -17,12 +18,16 @@ const FIXTURES = {
 const reducedMotion = () =>
   !!window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-let current = null; // { world, stop }
+let current = null;   // { world, stop }
+let liveCert = null;  // the certificate currently on the card (the engine's, or one re-issued live)
 
 function announce(msg) { $("status").textContent = msg; }
 
-// Paint the binding: the certificate, exactly as the engine emitted it (no re-derivation here).
+// Paint the binding: the certificate currently bound to the frame. `showCertificate` is the single
+// place the card is written, so the re-check, slider, and switch all share one source of truth.
 function showCertificate(cert) {
+  liveCert = cert || null;
+  $("recheck-out").hidden = true; // a new certificate invalidates the previous re-check
   if (!cert) {
     $("cert-claim").textContent = "this frame carries no certificate";
     const v = $("cert-verdict"); v.textContent = "—"; v.className = "tag unverifiable";
@@ -36,6 +41,25 @@ function showCertificate(cert) {
   $("cert-oracle").textContent = cert.oracle || "—";
   $("cert-evidence").innerHTML = (cert.evidence || []).map(([k, val]) =>
     `<div class="ev"><span class="ek">${k}</span><span class="ev-v">${val}</span></div>`).join("");
+}
+
+// The proof bites: re-derive the verdict in the browser, purely from the certificate's own
+// evidence, and show whether it reproduces what the card claims. Trust nothing — check it.
+function recheck() {
+  const out = $("recheck-out");
+  if (!liveCert) return;
+  const r = recheckCertificate(liveCert);
+  const rel = r.deviation <= r.tolerance ? "≤" : ">";
+  out.hidden = false;
+  out.innerHTML =
+    `<div class="rc-line">re-derived in your browser: deviation ` +
+    `<span class="rc-num">${r.deviation}</span> ${rel} tolerance ` +
+    `<span class="rc-num">${r.tolerance}</span> → <span class="tag ${r.verdict}">${r.verdict}</span></div>` +
+    `<div class="rc-match ${r.matches ? "ok" : "bad"}">` +
+    (r.matches ? "✓ reproduces the certificate — you didn't have to trust it"
+               : "✗ does not match the certificate") + `</div>`;
+  announce(`Re-checked independently: deviation ${r.deviation} ${rel} tolerance ${r.tolerance}, ` +
+    `verdict ${r.verdict}, ${r.matches ? "reproduces" : "does not match"} the certificate.`);
 }
 
 function showWorld(world) {
@@ -67,6 +91,7 @@ async function loadWorld(name) {
 }
 
 (async function boot() {
+  $("recheck-btn").addEventListener("click", recheck);
   try {
     showWorld(await loadWorld("gyroid"));
   } catch (e) {

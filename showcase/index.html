@@ -81,6 +81,18 @@
   .cert .evidence{margin-top:.5rem}
   .cert .ev{display:flex;justify-content:space-between;gap:.6rem;font-family:var(--mono);font-size:.58rem;color:var(--muted);padding:.16rem 0}
   .cert .ev .ek{color:var(--prussian)} .cert .ev .ev-v{color:var(--bone);word-break:break-all;text-align:right}
+  .recheck{margin-top:.85rem}
+  .btn{font-family:var(--mono);font-size:.62rem;letter-spacing:.04em;color:var(--ember);cursor:pointer;
+    background:transparent;border:1px solid rgba(239,171,48,.4);border-radius:8px;padding:.5em .9em;width:100%;
+    transition:background .15s,border-color .15s}
+  .btn:hover,.btn:focus-visible{background:rgba(239,171,48,.1);border-color:var(--ember);outline:none}
+  .recheck-out{margin-top:.7rem;font-family:var(--mono);font-size:.6rem;line-height:1.6;
+    border-top:1px solid rgba(239,171,48,.12);padding-top:.6rem;animation:fade .35s ease}
+  .recheck-out .rc-line{color:var(--muted)}
+  .recheck-out .rc-num{color:var(--bone)}
+  .recheck-out .rc-match{margin-top:.4rem;font-size:.64rem}
+  .recheck-out .rc-match.ok{color:var(--verified)} .recheck-out .rc-match.bad{color:var(--refuted)}
+  @keyframes fade{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
   .conn{text-align:center;font-family:var(--mono);font-size:.5rem;letter-spacing:.18em;color:var(--prussian);text-transform:uppercase;margin:.55rem 0 0}
 
   /* ---- controls + narrative (wired in later increments) ---- */
@@ -125,6 +137,10 @@
         <div class="row"><span class="rk">oracle</span><span class="rv" id="cert-oracle">—</span></div>
         <div class="row"><span class="rk">evidence</span><span class="rv"></span></div>
         <div class="evidence" id="cert-evidence"></div>
+        <div class="recheck">
+          <button id="recheck-btn" type="button" class="btn">Re-check this verdict yourself</button>
+          <div class="recheck-out" id="recheck-out" hidden></div>
+        </div>
         <div class="conn">↞ both witnesses point here ↠</div>
       </div>
     </section>
