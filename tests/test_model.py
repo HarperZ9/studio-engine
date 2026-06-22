@@ -12,6 +12,11 @@ from studio_engine.model import (
     Step,
     Verdict,
     Receipt,
+    RenderProgram,
+    AudioProgram,
+    Layer,
+    Timeline,
+    World,
     SCHEMA_VERSION,
 )
 
@@ -108,6 +113,43 @@ class TestSceneToJson(unittest.TestCase):
         d = scene.to_json()
         self.assertIn("audio", d)
         self.assertEqual(d["audio"]["mime"], "audio/wav")
+
+
+def _minimal_world() -> World:
+    rp = RenderProgram(target="glsl-fragment", generator="gyroid", source="sin(u)",
+                       value_range=[-3.0, 3.0], expr_sha256="abc123")
+    layer = Layer("gyroid", "Gyroid", "render", -1, rp, blend="normal",
+                  preview=Artifact("svg", "<svg></svg>").finalize())
+    step = Step(0, "critique", {"freq": 6.0},
+                [Verdict("clean_freq", "verified", 0.95, "objective")],
+                0.9, {"clean_freq": 0.95}, "clean_freq", "note")
+    traj = Trajectory([step], accepted_index=0, converged=True)
+    receipt = Receipt("wid", 0, ["gyroid"], ["abc123"], 0.9)
+    ap = AudioProgram(oscillators=[{"harmonic": 1, "gain": 0.5, "phase": 0.0}], base_freq=220.0)
+    tl = Timeline(period=1.04,
+                  continuity=Verdict("temporal.continuity", "verified", 0.99, "temporal"),
+                  on_criterion=Verdict("temporal.on_criterion", "verified", 0.9, "temporal"))
+    return World(id="wid", title="W", layers=[layer], audio_program=ap, timeline=tl,
+                 trajectory=traj, receipt=receipt, palette=["#101418", "#2dd4bf"], composition=None)
+
+
+class TestWorld(unittest.TestCase):
+    def test_to_json_round_trips(self):
+        d = _minimal_world().to_json()
+        json.dumps(d)
+        self.assertEqual(d["schema_version"], SCHEMA_VERSION)
+        self.assertEqual(d["layers"][0]["role"], "render")
+        self.assertEqual(d["layers"][0]["render_program"]["target"], "glsl-fragment")
+        self.assertIn("audio_program", d)
+        self.assertIn("timeline", d)
+        self.assertNotIn("composition", d)  # None dropped by _clean
+
+    def test_as_scene_projection(self):
+        sc = _minimal_world().as_scene()
+        self.assertIsInstance(sc, Scene)
+        self.assertEqual(sc.id, "wid")
+        self.assertEqual(len(sc.layers), 1)
+        json.dumps(sc.to_json())
 
 
 if __name__ == "__main__":

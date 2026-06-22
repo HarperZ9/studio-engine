@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "studio-engine"
-version = "0.1.0"
-description = "Native, zero-dependency creative-verification simulation engine — witnessed scenes for an experience-chamber frontend."
+version = "0.2.0"
+description = "Native, zero-dependency creative-verification engine — witnessed Worlds (self-describing GLSL/audio render programs) for an experience-chamber frontend."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "AGPL-3.0-or-later" }
 authors = [{ name = "Zain Dana Harper" }]
-keywords = ["generative", "verification", "accountability", "creative", "rendering", "zero-dependency", "oklab", "phyllotaxis"]
+keywords = ["generative", "verification", "accountability", "creative", "rendering", "zero-dependency", "glsl", "webaudio", "shader", "compositor", "oklab", "phyllotaxis"]
 classifiers = [
   "Programming Language :: Python :: 3",
   "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",

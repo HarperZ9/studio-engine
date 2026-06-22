@@ -13,6 +13,8 @@ from __future__ import annotations
 
 import math
 
+from ..strand import expr as ex
+
 PARAMS0 = {"scale": 4.5, "warp": 1.2}
 BOUNDS = {"scale": (2.0, 9.0), "warp": (0.0, 3.0)}
 
@@ -20,18 +22,26 @@ BG = "#0e1116"
 DEFAULT_PALETTE = ['#2dd4bf', '#7a5cff', '#fbbf24', '#ff7a5c']
 
 
-def value(params: dict, u: float, v: float) -> float:
-    """Pure flow potential at (u, v), u,v in [-1, 1]; smooth, in roughly [-1, 1].
+ANIMATABLE = True
 
-    Each axis is warped by a sinusoid of the other (the domain warp), then the two
-    warped waves are multiplied. The product of two cosines/sines stays bounded in
-    [-1, 1] and varies smoothly, reading as the swirling contours of a flow field.
-    """
-    s = params["scale"]
-    w = params["warp"]
-    a = math.sin(s * u + w * math.sin(s * v))
-    b = math.cos(s * v + w * math.cos(s * u))
-    return a * b
+
+def expr(params: dict) -> ex.Expr:
+    """Flow potential as a strand expr: sin(s u + w sin(s v) + t) * cos(s v + w cos(s u) + t)."""
+    s = float(params["scale"])
+    w = float(params["warp"])
+    u, v, t = ex.var("u"), ex.var("v"), ex.var("t")
+    a = ex.sin(ex.add(ex.mul(u, s), ex.mul(w, ex.sin(ex.mul(v, s))), t))
+    b = ex.cos(ex.add(ex.mul(v, s), ex.mul(w, ex.cos(ex.mul(u, s))), t))
+    return ex.mul(a, b)
+
+
+def value(params: dict, u: float, v: float) -> float:
+    """Pure flow potential at (u, v), u,v in [-1, 1] — the expr sampled at t=0 (smooth, ~[-1,1])."""
+    return ex.eval_expr(expr(params), {"u": u, "v": v, "t": 0.0})
+
+
+def period(params: dict) -> float:
+    return 2.0 * math.pi
 
 
 def _palette_index(val: float, lo: float, hi: float, n: int) -> int:

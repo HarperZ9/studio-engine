@@ -1,4 +1,4 @@
-"""Engine: per-generator Scene contract, determinism, and run()/simulate() parity.
+"""Engine: per-generator World contract, determinism, and run()/simulate() parity.
 
 Every test passes ``corpus_path=None`` so the persistent corpus is never touched
 and results stay deterministic.
@@ -9,7 +9,7 @@ import json
 import unittest
 
 from studio_engine import engine
-from studio_engine.model import Scene, Step
+from studio_engine.model import World, Scene, Step
 
 
 SEED = 7
@@ -27,37 +27,42 @@ class TestGenerators(unittest.TestCase):
 
 
 class TestSimulateContractPerGenerator(unittest.TestCase):
-    """For EVERY generator the emitted Scene must satisfy the full contract."""
+    """For EVERY generator the emitted World must satisfy the full contract."""
 
-    def test_scene_contract(self):
+    def test_world_contract(self):
         for gen in engine.generators():
             with self.subTest(generator=gen):
-                scene = engine.simulate(SEED, generator=gen, corpus_path=None)
-                self.assertIsInstance(scene, Scene)
+                world = engine.simulate(SEED, generator=gen, corpus_path=None)
+                self.assertIsInstance(world, World)
 
-                d = scene.to_json()
-                # JSON-serializable.
-                json.dumps(d)
-                self.assertIsInstance(d, dict)
+                d = world.to_json()
+                json.dumps(d)  # JSON-serializable
+                self.assertEqual(d["schema_version"], "studio-engine/2")
 
-                # >= 2 layers, including a role=="params" layer.
-                self.assertGreaterEqual(len(d["layers"]), 2)
-                roles = [layer["role"] for layer in d["layers"]]
-                self.assertIn("params", roles)
+                # >= 1 render layer, each carrying a render program with a known target.
+                self.assertGreaterEqual(len(d["layers"]), 1)
+                self.assertIn("render", [lyr["role"] for lyr in d["layers"]])
+                for lyr in d["layers"]:
+                    self.assertIn(lyr["render_program"]["target"],
+                                  ("glsl-fragment", "point-recipe"))
 
-                # Non-empty trajectory steps.
+                # The ear's synth graph is present.
+                self.assertIn("audio_program", d)
+
+                # Non-empty trajectory with an accepted step carrying margins.
                 steps = d["trajectory"]["steps"]
                 self.assertTrue(steps, "trajectory.steps must be non-empty")
+                ai = d["trajectory"]["accepted_index"]
+                self.assertGreaterEqual(ai, 0)
+                self.assertLess(ai, len(steps))
+                self.assertTrue(steps[ai].get("margins"), "accepted step must carry margins")
 
-                # An accepted step exists and carries non-empty margins.
-                accepted_index = d["trajectory"]["accepted_index"]
-                self.assertGreaterEqual(accepted_index, 0)
-                self.assertLess(accepted_index, len(steps))
-                accepted = steps[accepted_index]
-                self.assertTrue(
-                    accepted.get("margins"),
-                    "accepted step must carry non-empty margins",
-                )
+    def test_scene_projection_is_valid(self):
+        for gen in engine.generators():
+            with self.subTest(generator=gen):
+                sc = engine.simulate_scene(SEED, generator=gen, corpus_path=None)
+                self.assertIsInstance(sc, Scene)
+                json.dumps(sc.to_json())
 
 
 class TestDeterminism(unittest.TestCase):
@@ -75,30 +80,28 @@ class TestDeterminism(unittest.TestCase):
 
 
 class TestRunStream(unittest.TestCase):
-    def test_run_yields_steps_then_single_scene(self):
+    def test_run_yields_steps_then_single_world(self):
         for gen in engine.generators():
             with self.subTest(generator=gen):
                 items = list(engine.run(SEED, generator=gen, corpus_path=None))
                 kinds = [k for k, _ in items]
 
-                # One-or-more ("step", Step) then exactly one ("scene", Scene).
-                self.assertEqual(kinds.count("scene"), 1)
-                self.assertEqual(kinds[-1], "scene")
+                self.assertEqual(kinds.count("world"), 1)
+                self.assertEqual(kinds[-1], "world")
                 self.assertGreaterEqual(kinds.count("step"), 1)
-                # The scene is the final item; everything before it is a step.
                 self.assertTrue(all(k == "step" for k in kinds[:-1]))
 
                 for kind, obj in items[:-1]:
                     self.assertEqual(kind, "step")
                     self.assertIsInstance(obj, Step)
-                self.assertIsInstance(items[-1][1], Scene)
+                self.assertIsInstance(items[-1][1], World)
 
-    def test_run_scene_id_matches_simulate(self):
+    def test_run_world_id_matches_simulate(self):
         for gen in engine.generators():
             with self.subTest(generator=gen):
                 items = list(engine.run(SEED, generator=gen, corpus_path=None))
-                scene = items[-1][1]
-                self.assertEqual(scene.id, engine.simulate(SEED, generator=gen, corpus_path=None).id)
+                world = items[-1][1]
+                self.assertEqual(world.id, engine.simulate(SEED, generator=gen, corpus_path=None).id)
 
 
 class TestLibrary(unittest.TestCase):
