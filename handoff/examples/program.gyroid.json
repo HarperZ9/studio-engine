@@ -1,0 +1,61 @@
+[
+  {
+    "target": "glsl-fragment",
+    "generator": "gyroid",
+    "source": "precision highp float;\nuniform float u_time;\nuniform vec2 u_resolution;\nuniform vec2 u_value_range;\nuniform vec3 u_palette[6];\nfloat safediv(float a, float b){ float d = abs(b) > 1e-3 ? b : (b >= 0.0 ? 1e-3 : -1e-3); return a / d; }\nfloat field(float u, float v, float t){ return ((sin((u * 10.0)) * cos((v * 10.0))) + (sin((v * 10.0)) * cos((t * 10.0))) + (sin((t * 10.0)) * cos((u * 10.0)))); }\nvec3 ramp(float x){\n  x = clamp(x, 0.0, 1.0);\n  float s = x * float(6 - 1);\n  int idx = int(floor(s));\n  float f = fract(s);\n  vec3 a = u_palette[0];\n  vec3 b = u_palette[0];\n  for (int k = 0; k < 6; k++) {\n    if (k == idx) a = u_palette[k];\n    if (k == idx + 1) b = u_palette[k];\n  }\n  return mix(a, b, f);\n}\nvoid main(){\n  vec2 uv = (gl_FragCoord.xy / u_resolution) * 2.0 - 1.0;\n  float val = field(uv.x, uv.y, u_time);\n  float n = (val - u_value_range.x) / max(1e-6, (u_value_range.y - u_value_range.x));\n  gl_FragColor = vec4(ramp(n), 1.0);\n}",
+    "recipe": {},
+    "uniforms": {
+      "u_time": {
+        "type": "float",
+        "default": 0.95
+      },
+      "u_resolution": {
+        "type": "vec2"
+      },
+      "u_palette": {
+        "type": "vec3[]",
+        "value": [
+          "#7375cb",
+          "#8e7fd8",
+          "#a88ae3",
+          "#c295ec",
+          "#dca1f3",
+          "#f5adf9"
+        ]
+      },
+      "u_value_range": {
+        "type": "vec2",
+        "value": [
+          -1.405955,
+          1.41591
+        ]
+      }
+    },
+    "domain": {
+      "u": [
+        -1.0,
+        1.0
+      ],
+      "v": [
+        -1.0,
+        1.0
+      ],
+      "t": [
+        0.0,
+        0.628319
+      ],
+      "animatable": true,
+      "period": 0.628319
+    },
+    "value_range": [
+      -1.405955,
+      1.41591
+    ],
+    "color": {
+      "mode": "ramp",
+      "stops": 6
+    },
+    "expr_sha256": "528f4a81a82a6ea2",
+    "notes": "WebGL1 fragment; field() is the verified strand expr; animate u_time in [0, period)."
+  }
+]
