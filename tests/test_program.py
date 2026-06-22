@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 import unittest
 from dataclasses import asdict
 
@@ -38,16 +39,40 @@ class TestFieldPrograms(unittest.TestCase):
                 self.assertEqual(rp.expr_sha256, ex.sha(e))
                 json.dumps(asdict(rp))  # fully serializable
 
-    def test_value_range_matches_sampling(self):
+    def test_value_range_covers_animation(self):
+        # The shipped value_range must bracket the field across every frame the chamber renders
+        # (the whole loop for animatable fields), so coloring never clips/washes mid-animation.
+        gens = engine._gens()
+        for name in FIELDS:
+            spec = gens[name]
+            P = _params(spec)
+            e = spec["expr"](P)
+            period = spec["period"](P)
+            rp = prog.field_program(name, e, PAL, spec["t0"](P), spec["animatable"], period)
+            lo, hi = rp.value_range
+            ts = [period * k / 8 for k in range(8)] if (spec["animatable"] and period > 0) \
+                else [spec["t0"](P)]
+            for t in ts:
+                vals = ex.sample_field(e, 24, t)
+                self.assertGreaterEqual(min(vals), lo - 1e-6, f"{name} t={t}")
+                self.assertLessEqual(max(vals), hi + 1e-6, f"{name} t={t}")
+
+    def test_shipped_glsl_body_is_the_engine_field(self):
+        # The keystone, through the SHIPPED artifact: parse the field() body out of the emitted
+        # fragment source and confirm it evaluates to the engine's verified field. Non-circular.
         gens = engine._gens()
         for name in FIELDS:
             spec = gens[name]
             P = _params(spec)
             e, t0 = spec["expr"](P), spec["t0"](P)
             rp = prog.field_program(name, e, PAL, t0, spec["animatable"], spec["period"](P))
-            vals = ex.sample_field(e, 24, t0)
-            self.assertAlmostEqual(rp.value_range[0], round(min(vals), 6), places=6)
-            self.assertAlmostEqual(rp.value_range[1], round(max(vals), 6), places=6)
+            m = re.search(r"float field\(float u, float v, float t\)\{ return (.+?); \}", rp.source)
+            self.assertIsNotNone(m, f"{name}: field() body not found in shipped source")
+            body = glsl.parse_glsl(m.group(1))
+            for (u, v) in [(-0.6, 0.3), (0.2, -0.5), (0.8, 0.8)]:
+                with self.subTest(field=name, u=u, v=v):
+                    self.assertAlmostEqual(ex.eval_expr(body, {"u": u, "v": v, "t": t0}),
+                                           spec["field"](P, u, v), places=6)
 
 
 class TestPointPrograms(unittest.TestCase):

@@ -38,7 +38,8 @@ attractor · harmonograph · flowfield · metaballs · turbulence · rings · mo
 Build the chamber: compile the `render_program` live (WebGL for fields, canvas for point recipes),
 play the `audio_program`, visualize the `trajectory` + `timeline` as the reasoning, theme from the
 palette, and wire gallery + simulate + compose + (optionally) the live stream and a cross-examine
-session. Make it mind-blowing — the engine guarantees every frame is grounded and reproducible.
+session. Make it mind-blowing — every frame's geometry is the verified expression (the colour range
+is sampled across the whole loop), deterministic for a fixed corpus and re-checkable via the receipt.
 
 ## Honest scope (don't oversell)
 This is the **engine that FEEDS the chamber**. The dependency-free **native GPU renderer**

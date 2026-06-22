@@ -56,7 +56,9 @@ def seed_gallery() -> None:
         return
     for g in generators():
         for seed in (7, 42):
-            s = simulate(seed, generator=g)
+            # corpus_path=None: a deterministic, reproducible showcase gallery that does NOT mutate
+            # the persistent corpus on startup. (On-demand POST /simulate still uses the living corpus.)
+            s = simulate(seed, generator=g, corpus_path=None)
             _SCENES[s.id] = s
             _GALLERY.append(s.id)
 

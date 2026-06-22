@@ -53,9 +53,17 @@ void main(){{
 
 def field_program(generator: str, e: ex.Expr, palette: list, t0: float,
                   animatable: bool, period: float, samples: int = 24) -> RenderProgram:
-    """Build a glsl-fragment RenderProgram from a field expr; value_range is engine-sampled at t0."""
+    """Build a glsl-fragment RenderProgram from a field expr.
+
+    value_range is sampled across the WHOLE loop (every K-th frame over [0, period)) for animatable
+    fields, so the shipped coloring covers what the chamber actually renders as u_time sweeps — not
+    just a single t0 slice. Non-animatable fields sample at t0.
+    """
     src = glsl.emit_glsl(e)
-    vals = ex.sample_field(e, samples, t0)
+    if animatable and period > 0:
+        vals = [v for k in range(8) for v in ex.sample_field(e, samples, period * k / 8)]
+    else:
+        vals = ex.sample_field(e, samples, t0)
     lo, hi = min(vals), max(vals)
     if hi <= lo:
         hi = lo + 1e-6

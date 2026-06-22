@@ -173,5 +173,6 @@ Show `world.receipt` (seed, organ_ids, artifact_shas, final_score) so the experi
 This is the **generation + verification** engine that *feeds* the chamber — real render programs,
 real audio params, real witnessed reasoning. The **dependency-free native GPU renderer** (no
 DirectX/driver) is raw's separate telos, not this package. The shaders here are standard WebGL1 you
-run in the browser. Build the chamber as the experiential front; the engine guarantees every frame in
-it is grounded and reproducible.
+run in the browser. Build the chamber as the experiential front: every frame's **geometry is the
+verified expression** (the colour `value_range` is sampled across the whole loop so it doesn't clip),
+and a World is deterministic for a fixed corpus — reproducible and re-checkable via the receipt.

@@ -73,16 +73,18 @@ class TestFieldExprs(unittest.TestCase):
                                 ex.eval_expr(e, {"u": u, "v": v, "t": t}),
                                 _ref(name, P, u, v, t), places=9)
 
-    def test_engine_features_sample_the_expr(self):
+    def test_engine_field_is_verified_math(self):
+        # Non-circular: the engine's feature-field (the values its criteria judge) equals the
+        # independent reference at the static slice — NOT eval(expr) compared against eval(expr).
         gens = engine._gens()
         for name in FIELDS:
             spec = gens[name]
             P = _params(spec, 7)
-            e, t0 = spec["expr"](P), spec["t0"](P)
+            t0 = spec["t0"](P)
             for (u, v) in _SAMPLES:
                 with self.subTest(field=name, u=u, v=v):
                     self.assertAlmostEqual(spec["field"](P, u, v),
-                                           ex.eval_expr(e, {"u": u, "v": v, "t": t0}), places=12)
+                                           _ref(name, P, u, v, t0), places=9)
 
     def test_glsl_roundtrip(self):
         gens = engine._gens()
