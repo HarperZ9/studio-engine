@@ -12,7 +12,7 @@ import json
 from dataclasses import dataclass, field, asdict
 from typing import Any, Literal
 
-SCHEMA_VERSION = "studio-engine/1"
+SCHEMA_VERSION = "studio-engine/2"
 
 ArtifactKind = Literal["svg", "png", "audio_wav", "audio_params", "data"]
 VerdictTag = Literal["verified", "refuted", "unverifiable"]
@@ -112,6 +112,96 @@ class Scene:
 
     def to_json(self) -> dict[str, Any]:
         return _clean(asdict(self))
+
+
+@dataclass
+class RenderProgram:
+    """A layer's drop-in live render, emitted as data: the eye reads the engine's verified math.
+
+    `glsl-fragment` carries `source` (compile it; prepend strand's GLSL helpers) + `uniforms`;
+    `point-recipe` carries `recipe` (run it). `expr_sha256` receipts the canonical strand expr.
+    """
+    target: Literal["glsl-fragment", "point-recipe"]
+    generator: str
+    source: str = ""
+    recipe: dict[str, Any] = field(default_factory=dict)
+    uniforms: dict[str, Any] = field(default_factory=dict)
+    domain: dict[str, Any] = field(default_factory=dict)
+    value_range: list[float] = field(default_factory=list)
+    color: dict[str, Any] = field(default_factory=dict)
+    expr_sha256: str = ""
+    notes: str = ""
+
+
+@dataclass
+class AudioProgram:
+    """The ear's drop-in synth graph: oscillators + a frequency-automation curve + envelope.
+
+    Instantiate one OscillatorNode per partial; automate frequency along `pitch_curve`. Grounded
+    against the baked WAV (`wav_url`) by shared sonify source.
+    """
+    oscillators: list[dict[str, Any]] = field(default_factory=list)
+    base_freq: float = 0.0
+    pitch_curve: list[float] = field(default_factory=list)
+    envelope: dict[str, Any] = field(default_factory=dict)
+    waveform: str = "additive-sine"
+    expr_sha256: str = ""
+    wav_url: str = ""
+
+
+@dataclass
+class Layer:
+    """One depth-ordered station in the composed room: a render program + a preview fallback."""
+    organ_id: str
+    title: str
+    role: str
+    z: int
+    render_program: RenderProgram
+    blend: str = "normal"           # "normal" | "add" | "screen" | "multiply"
+    preview: Artifact | None = None  # SVG/PNG fallback if the client doesn't render live
+
+
+@dataclass
+class Timeline:
+    """The witnessed choreography: a loop period + the verdicts that ground the motion."""
+    period: float = 0.0
+    channels: list[dict[str, Any]] = field(default_factory=list)
+    continuity: Verdict | None = None      # bounded frame-to-frame delta (no popping)
+    on_criterion: Verdict | None = None    # stays in-band across the whole loop
+
+
+@dataclass
+class World:
+    """The full witnessed experience: layered render programs + audio + motion + reasoning.
+
+    Supersedes Scene (a single-organ scene is a World with one visual layer). Carries the
+    composition verdict (how the layers cohere) and stays fully re-checkable via the receipt.
+    """
+    id: str
+    title: str
+    layers: list[Layer]
+    audio_program: AudioProgram | None
+    timeline: Timeline | None
+    trajectory: Trajectory
+    receipt: Receipt
+    palette: list[str] = field(default_factory=list)
+    composition: Verdict | None = None
+    schema_version: str = SCHEMA_VERSION
+
+    def to_json(self) -> dict[str, Any]:
+        return _clean(asdict(self))
+
+    def as_scene(self) -> "Scene":
+        """Single-layer/back-compat projection for any consumer still expecting a Scene."""
+        layers = []
+        for lyr in self.layers:
+            art = lyr.preview or Artifact(
+                "data", json.dumps({"target": lyr.render_program.target,
+                                    "generator": lyr.render_program.generator}),
+                label=lyr.organ_id).finalize()
+            layers.append(SceneLayer(lyr.organ_id, lyr.title, art, role=lyr.role, z=lyr.z))
+        return Scene(id=self.id, title=self.title, layers=layers, audio=None,
+                     trajectory=self.trajectory, receipt=self.receipt, palette=self.palette)
 
 
 @dataclass
