@@ -17,7 +17,8 @@ from typing import Any
 from .model import (Artifact, Verdict, Step, Trajectory, Receipt, Scene, World, Layer, OrganInfo, _sha)
 from .organs import (geometry as geo, palette as pal, fields as fld, sonify as snd,
                      attractor as att, harmonograph as harm, flowfield as flow,
-                     metaballs as mb, turbulence as turb, program as prog)
+                     metaballs as mb, turbulence as turb, program as prog,
+                     rings, moire)
 from . import criteria as crit
 from . import temporal
 from .corpus import Corpus
@@ -103,6 +104,22 @@ def _gens() -> dict[str, dict[str, Any]]:
             "field": lambda p, u, v: turb.value(p, u, v),
             "expr": turb.expr, "t0": lambda p: 0.0,
             "animatable": turb.ANIMATABLE, "period": turb.period,
+        },
+        "rings": {
+            "params0": lambda rng: _init(rings.PARAMS0, rings.BOUNDS, rng), "bounds": rings.BOUNDS,
+            "axes": ["contrast", "complexity"],
+            "render": lambda p, pl: rings.svg(p, pl, samples=64), "points": None,
+            "field": lambda p, u, v: rings.value(p, u, v),
+            "expr": rings.expr, "t0": lambda p: 0.0,
+            "animatable": rings.ANIMATABLE, "period": rings.period,
+        },
+        "moire": {
+            "params0": lambda rng: _init(moire.PARAMS0, moire.BOUNDS, rng), "bounds": moire.BOUNDS,
+            "axes": ["contrast", "complexity"],
+            "render": lambda p, pl: moire.svg(p, pl, samples=64), "points": None,
+            "field": lambda p, u, v: moire.value(p, u, v),
+            "expr": moire.expr, "t0": lambda p: 0.0,
+            "animatable": moire.ANIMATABLE, "period": moire.period,
         },
     }
 
@@ -226,6 +243,10 @@ def library() -> list[OrganInfo]:
                   {"count": "int", "spread": "float", "falloff": "float"}, "implicit surfaces"),
         OrganInfo("turbulence", "Turbulence (fBm)", "generator", "Fractal sinusoidal turbulence.",
                   {"freq": "float", "octaves": "int", "gain": "float"}, "fractal noise"),
+        OrganInfo("rings", "Rings", "generator", "Concentric interference rings.",
+                  {"freq": "float"}, "sensory-transform-algebra Field"),
+        OrganInfo("moire", "Moire", "generator", "Two rotated gratings (moire beat).",
+                  {"freq": "float", "angle": "float"}, "sensory-transform-algebra Field"),
         OrganInfo("palette.oklch", "OKLCh palette", "generator", "Perceptual color ramp.",
                   {"scheme": "str"}, "coherence-membrane color/OKLab"),
         OrganInfo("raster.png", "Native PNG", "compositor", "Zero-dep PNG raster.", {"size": "int"}, "raw eye"),

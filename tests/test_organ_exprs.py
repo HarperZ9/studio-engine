@@ -14,7 +14,7 @@ from studio_engine.organs import metaballs as mb
 from studio_engine.strand import expr as ex
 from studio_engine.strand import glsl
 
-FIELDS = ["gyroid", "quasicrystal", "flowfield", "metaballs", "turbulence"]
+FIELDS = ["gyroid", "quasicrystal", "flowfield", "metaballs", "turbulence", "rings", "moire"]
 _SAMPLES = [(-0.7, 0.3), (0.2, -0.5), (0.9, 0.9), (0.0, 0.0), (-0.4, -0.8)]
 
 
@@ -50,6 +50,11 @@ def _ref(name, P, u, v, t):
         for (cx, cy, r) in mb._seeds(P):
             tot += (r * r) / ((u - cx) ** 2 + (v - cy) ** 2 + 1e-3)
         return tot * P["falloff"]
+    if name == "rings":
+        return math.sin(math.sqrt(u * u + v * v) * P["freq"] + t)
+    if name == "moire":
+        f, a = P["freq"], P["angle"]
+        return math.sin(u * f + t) * math.sin((u * math.cos(a) + v * math.sin(a)) * f + t)
     raise AssertionError(name)
 
 
