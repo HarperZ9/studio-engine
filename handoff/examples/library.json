@@ -35,6 +35,88 @@
       "lineage": "sensory-transform-algebra Field"
     },
     {
+      "id": "attractor.dejong",
+      "name": "de Jong attractor",
+      "kind": "generator",
+      "summary": "Strange-attractor point cloud.",
+      "params_schema": {
+        "a": "float",
+        "b": "float",
+        "c": "float",
+        "d": "float"
+      },
+      "lineage": "dynamical systems"
+    },
+    {
+      "id": "harmonograph",
+      "name": "Harmonograph",
+      "kind": "generator",
+      "summary": "Damped-Lissajous curve.",
+      "params_schema": {
+        "f1": "float",
+        "f2": "float",
+        "f3": "float",
+        "f4": "float"
+      },
+      "lineage": "harmonic motion"
+    },
+    {
+      "id": "flowfield",
+      "name": "Flow field",
+      "kind": "generator",
+      "summary": "Domain-warped curl flow.",
+      "params_schema": {
+        "scale": "float",
+        "warp": "float"
+      },
+      "lineage": "sensory-transform-algebra Field"
+    },
+    {
+      "id": "metaballs",
+      "name": "Metaballs",
+      "kind": "generator",
+      "summary": "Distance-field potential.",
+      "params_schema": {
+        "count": "int",
+        "spread": "float",
+        "falloff": "float"
+      },
+      "lineage": "implicit surfaces"
+    },
+    {
+      "id": "turbulence",
+      "name": "Turbulence (fBm)",
+      "kind": "generator",
+      "summary": "Fractal sinusoidal turbulence.",
+      "params_schema": {
+        "freq": "float",
+        "octaves": "int",
+        "gain": "float"
+      },
+      "lineage": "fractal noise"
+    },
+    {
+      "id": "rings",
+      "name": "Rings",
+      "kind": "generator",
+      "summary": "Concentric interference rings.",
+      "params_schema": {
+        "freq": "float"
+      },
+      "lineage": "sensory-transform-algebra Field"
+    },
+    {
+      "id": "moire",
+      "name": "Moire",
+      "kind": "generator",
+      "summary": "Two rotated gratings (moire beat).",
+      "params_schema": {
+        "freq": "float",
+        "angle": "float"
+      },
+      "lineage": "sensory-transform-algebra Field"
+    },
+    {
       "id": "palette.oklch",
       "name": "OKLCh palette",
       "kind": "generator",

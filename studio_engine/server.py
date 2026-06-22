@@ -5,9 +5,14 @@ Endpoints (see handoff/ for the full contract):
   GET  /generators             -> {generators: [...]}
   GET  /library                -> {organs: [...]}            the resource library
   GET  /gallery                -> {scenes: [summary...]}     pre-built showcase set
-  POST /simulate {seed,generator,scheme} -> Scene            run the loop
-  GET  /scene/{id}             -> Scene                      a cached scene
-  GET  /audio/{id}.wav         -> audio/wav                  baked sonification of a scene
+  POST /simulate {seed,generator,scheme} -> World            run the loop
+  POST /compose {seed,organs,scheme}     -> World            layered composite
+  GET  /scene/{id}             -> World                      a cached World
+  GET  /scene/{id}/program     -> {programs:[RenderProgram]} drop-in render programs per layer
+  GET  /scene/{id}/filmstrip   -> per-step params for replaying convergence
+  GET  /audio/{id}.wav         -> audio/wav                  baked sonification
+  GET  /simulate/stream        -> SSE: 'step' events then 'world', then 'done'
+  POST /session ... GET/POST /session/{id}/...              interactive cross-examine
 
 The frontend "experience chamber" consumes these. Scenes carry a `params` layer (z=-1) the
 chamber renders live; SVG/PNG layers are previews/fallbacks.
@@ -24,6 +29,7 @@ from urllib.parse import urlparse, parse_qs
 
 from . import __version__
 from .engine import simulate, run, library, generators
+from . import compose as comp
 from .organs import sonify as snd
 from .session import Session
 from .model import _sha
@@ -33,14 +39,15 @@ _GALLERY: list = []    # ordered scene ids
 _SESSIONS: dict = {}   # id -> Session (interactive cross-examine)
 
 
-def _summary(scene) -> dict:
+def _summary(world) -> dict:
     return {
-        "id": scene.id, "title": scene.title, "seed": scene.receipt.seed,
-        "generator": scene.receipt.organ_ids[0], "score": scene.receipt.final_score,
-        "converged": scene.trajectory.converged, "palette": scene.palette,
-        "layers": [{"role": l.role, "organ_id": l.organ_id, "kind": l.artifact.kind,
-                    "sha256": l.artifact.sha256} for l in scene.layers],
-        "audio": (scene.audio.kind if scene.audio else None),
+        "id": world.id, "title": world.title, "seed": world.receipt.seed,
+        "generator": world.receipt.organ_ids[0], "score": world.receipt.final_score,
+        "converged": world.trajectory.converged, "palette": world.palette,
+        "layers": [{"role": lyr.role, "organ_id": lyr.organ_id, "z": lyr.z, "blend": lyr.blend,
+                    "target": lyr.render_program.target} for lyr in world.layers],
+        "audio": (world.audio_program.waveform if world.audio_program else None),
+        "animatable": bool(world.timeline),
     }
 
 
@@ -49,7 +56,9 @@ def seed_gallery() -> None:
         return
     for g in generators():
         for seed in (7, 42):
-            s = simulate(seed, generator=g)
+            # corpus_path=None: a deterministic, reproducible showcase gallery that does NOT mutate
+            # the persistent corpus on startup. (On-demand POST /simulate still uses the living corpus.)
+            s = simulate(seed, generator=g, corpus_path=None)
             _SCENES[s.id] = s
             _GALLERY.append(s.id)
 
@@ -97,6 +106,13 @@ class Handler(BaseHTTPRequestHandler):
                       for st in s.trajectory.steps]
             return self._send({"scene_id": s.id, "generator": s.receipt.organ_ids[0],
                                "palette": s.palette, "frames": frames})
+        m = re.match(r"^/scene/([0-9a-f]+)/program$", path)
+        if m:
+            s = _SCENES.get(m.group(1))
+            if not s:
+                return self._send({"error": "not found"}, 404)
+            return self._send({"scene_id": s.id,
+                               "programs": [asdict(lyr.render_program) for lyr in s.layers]})
         m = re.match(r"^/scene/([0-9a-f]+)$", path)
         if m:
             s = _SCENES.get(m.group(1))
@@ -166,6 +182,16 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send({"error": str(e)}, 400)
             _SCENES[s.id] = s
             return self._send(s.to_json())
+
+        if path == "/compose":
+            try:
+                w = comp.compose(seed=int(body.get("seed", 0)),
+                                 organ_set=body.get("organs") or body.get("organ_set"),
+                                 scheme=str(body.get("scheme", "analogous")))
+            except (ValueError, TypeError) as e:
+                return self._send({"error": str(e)}, 400)
+            _SCENES[w.id] = w
+            return self._send(w.to_json())
 
         if path == "/session":
             try:

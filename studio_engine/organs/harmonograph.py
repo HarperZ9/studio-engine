@@ -17,6 +17,8 @@ from __future__ import annotations
 
 import math
 
+from ..strand import expr as ex, recipe as rc
+
 T = 60.0  # total trace time; the decay envelope tames the tail
 
 PARAMS0 = {"f1": 2.0, "f2": 3.0, "f3": 3.0, "f4": 2.0,
@@ -40,6 +42,26 @@ def _phases(f1: float, f2: float, f3: float, f4: float, phase: float):
             phase + half_pi + 0.1 * f2,
             phase + math.pi + 0.1 * f3,
             phase + 3.0 * half_pi + 0.1 * f4)
+
+
+def recipe(params: dict, count: int = 4000) -> dict:
+    """Parametric recipe reproducing the damped harmonograph trace over t in [0, T]."""
+    f1 = float(params.get("f1", PARAMS0["f1"]))
+    f2 = float(params.get("f2", PARAMS0["f2"]))
+    f3 = float(params.get("f3", PARAMS0["f3"]))
+    f4 = float(params.get("f4", PARAMS0["f4"]))
+    d1 = float(params.get("d1", PARAMS0["d1"]))
+    d2 = float(params.get("d2", PARAMS0["d2"]))
+    phase = float(params.get("phase", PARAMS0["phase"]))
+    p1, p2, p3, p4 = _phases(f1, f2, f3, f4, phase)
+    t = ex.var("t")
+
+    def damped(f, p, d):
+        return ex.mul(ex.sin(ex.add(ex.mul(t, f), p)), ex.exp(ex.neg(ex.mul(t, d))))
+
+    x_expr = ex.add(damped(f1, p1, d1), damped(f2, p2, d2))
+    y_expr = ex.add(damped(f3, p3, d1), damped(f4, p4, d2))
+    return rc.parametric(x_expr, y_expr, t_max=T, count=count)
 
 
 def points(params: dict, n: int = 4000) -> list[tuple[float, float, int]]:

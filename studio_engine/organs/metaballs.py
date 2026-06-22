@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import math
 
+from ..strand import expr as ex
+
 PARAMS0 = {"count": 5.0, "spread": 0.32, "falloff": 0.06}
 BOUNDS = {"count": (3.0, 9.0), "spread": (0.15, 0.5), "falloff": (0.02, 0.15)}
 
@@ -55,20 +57,34 @@ def _seeds(params: dict) -> list[tuple[float, float, float]]:
     return out
 
 
-def value(params: dict, u: float, v: float) -> float:
-    """Summed metaball potential at (u, v): sum of r*r / (dist^2 + eps), scaled by falloff.
+# Not animatable in v1: animating baked centers is more than a phase term (spec §6).
+ANIMATABLE = False
 
-    Classic inverse-square charge field over the seeds, with a small epsilon so the
-    self-singularity at a ball's center stays finite. Returns >= 0 and may exceed 1;
-    the caller normalizes across its grid.
+
+def expr(params: dict) -> ex.Expr:
+    """Summed metaball potential as a strand expr, balls baked as constants at build time.
+
+    sum_balls (r*r / ((u-cx)^2 + (v-cy)^2 + 1e-3)) * falloff. The +1e-3 matches the strand
+    div guard exactly, so eval(expr) == the original value() to the bit.
     """
     falloff = float(params["falloff"])
-    total = 0.0
+    u, v = ex.var("u"), ex.var("v")
+    terms = []
     for (cx, cy, r) in _seeds(params):
-        du = u - cx
-        dv = v - cy
-        total += (r * r) / (du * du + dv * dv + 1e-3)
-    return total * falloff
+        du, dv = ex.sub(u, cx), ex.sub(v, cy)
+        denom = ex.add(ex.mul(du, du), ex.mul(dv, dv), 1e-3)
+        terms.append(ex.div(r * r, denom))
+    total = ex.add(*terms) if terms else ex.const(0.0)
+    return ex.mul(total, falloff)
+
+
+def value(params: dict, u: float, v: float) -> float:
+    """Summed metaball potential at (u, v) — the expr sampled (t unused). >= 0, may exceed 1."""
+    return ex.eval_expr(expr(params), {"u": u, "v": v, "t": 0.0})
+
+
+def period(params: dict) -> float:
+    return 0.0
 
 
 def svg(params: dict, palette: list[str], size: int = 720, samples: int = 64,
