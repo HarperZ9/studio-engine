@@ -15,6 +15,7 @@ from . import criteria as crit
 from .model import World, Verdict, Receipt, _sha
 from .organs import palette as pal
 from .organs.sonify import _hex_to_rgb, _rgb_to_hue_light
+from .certify import world_certificate
 
 
 def _palette_harmony(palette: list) -> float:
@@ -74,4 +75,5 @@ def compose(seed: int = 0, organ_set: list | None = None, scheme: str = "analogo
                  audio_program=first.audio_program, timeline=first.timeline,
                  trajectory=first.trajectory,
                  receipt=Receipt(sid, seed, list(organ_set) + ["compose"], shas, round(score, 4)),
-                 palette=palette, composition=comp)
+                 palette=palette, composition=comp,
+                 certificate=world_certificate(score).to_dict())

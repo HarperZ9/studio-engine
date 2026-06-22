@@ -186,6 +186,7 @@ class World:
     receipt: Receipt
     palette: list[str] = field(default_factory=list)
     composition: Verdict | None = None
+    certificate: dict | None = None   # external structural-fitness Certificate (coherence-membrane); absent if none
     schema_version: str = SCHEMA_VERSION
 
     def to_json(self) -> dict[str, Any]:

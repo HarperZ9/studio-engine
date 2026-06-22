@@ -39,6 +39,15 @@ export interface Verdict {
   detail: string;
 }
 
+/** A re-checkable coherence-membrane verdict — an EXTERNAL criterion the engine did not author
+ *  (the anti-self-grading oracle). Wire shape matches coherence_membrane Certificate.to_dict(). */
+export interface Certificate {
+  claim: string;
+  verdict: VerdictTag;            // "verified" | "refuted" | "unverifiable"
+  oracle: string;                 // e.g. "structural-fitness-v1"
+  evidence: [string, string][];   // ordered (key, value) pairs
+}
+
 /** One iteration of the loop: params tried, per-axis margins, cohesion, the weakest axis. */
 export interface Step {
   index: number;
@@ -156,6 +165,7 @@ export interface World {
   receipt: Receipt;
   palette: string[];              // hex swatches — theme the chamber from these
   composition?: Verdict;          // ABSENT for single-organ worlds; present from /compose
+  certificate?: Certificate;      // external structural-fitness verdict (coherence-membrane oracle)
   schema_version: string;         // "studio-engine/2"
 }
 
