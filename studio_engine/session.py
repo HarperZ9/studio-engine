@@ -7,10 +7,11 @@ the same candidate together, in real time. Stdlib only; reuses the engine's help
 """
 from __future__ import annotations
 
+from dataclasses import asdict
 from pathlib import Path
 
 from .engine import _gens, _evaluate, _refine, _clamp, _CORPUS_PATH
-from .organs import palette as pal
+from .organs import palette as pal, program as prog
 from . import criteria as crit
 from .corpus import Corpus
 
@@ -81,6 +82,14 @@ class Session:
                 "tag": crit.tag(margins[ax], self.target, self.floor), "cohesion": round(coh, 4),
                 "why": _WHY.get(k, ""), "all_margins": {a: round(v, 4) for a, v in margins.items()}}
 
+    def program(self):
+        """The current candidate's live RenderProgram — render the steered candidate as you examine it."""
+        spec = self.spec
+        if spec["field"] is not None:
+            return prog.field_program(self.generator, spec["expr"](self.params), self.palette,
+                                      spec["t0"](self.params), spec["animatable"], spec["period"](self.params))
+        return prog.point_program(self.generator, spec["recipe"](self.params), self.palette)
+
     def state(self) -> dict:
         _, margins, coh = self._eval()
         return {
@@ -90,4 +99,5 @@ class Session:
             "weakest": min(margins, key=lambda a: margins[a]),
             "converged": coh >= self.target and all(s >= self.floor for s in margins.values()),
             "steps": self.n, "history": self.history,
+            "program": asdict(self.program()),
         }
