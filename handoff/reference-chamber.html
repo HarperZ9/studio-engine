@@ -1,23 +1,28 @@
 <!doctype html>
 <!--
-  studio-engine — reference experience chamber (single file, zero build, zero deps).
+  studio-engine — reference experience chamber (single file, zero build, zero deps, accessible).
 
   RUN:
     1. python -m studio_engine.server 8777      (from the repo root)
-    2. open this file in a browser (file:// is fine; CORS is open on the server).
+    2. open this file in a browser (serve it over http, or open directly; CORS is open).
 
   WHAT IT PROVES (manual verification checklist):
-    [ ] Load a gallery World, or POST /simulate — a field generator (e.g. gyroid) RENDERS LIVE
-        in WebGL by compiling the shipped render_program.source VERBATIM, and BREATHES as u_time
-        animates over [0, period). (This is the engine's verified math, not a re-derivation.)
-    [ ] A point generator (phyllotaxis/attractor/harmonograph) draws from its recipe on Canvas2D.
-    [ ] "▶ audio" synthesizes the audio_program (oscillators + pitch sweep) via Web Audio.
-    [ ] "composite" stacks two blended layers (field behind, points in front) from /compose.
-    [ ] The reasoning panel shows per-axis margins, the timeline continuity/on-criterion verdicts,
-        and the receipt (id, seed, final_score, expr_sha256s) — every frame accountable.
+    [ ] Load a gallery World, or "simulate" — a field generator (gyroid) RENDERS LIVE in WebGL by
+        compiling render_program.source VERBATIM, and BREATHES as u_time animates over [0, period).
+    [ ] A point generator (attractor/harmonograph/phyllotaxis) draws from its recipe on Canvas2D.
+    [ ] "Play audio" synthesizes the audio_program (oscillators + pitch sweep) via Web Audio.
+    [ ] "Composite" stacks two blended layers (field behind, points in front) from /compose.
+    [ ] "Watch it think" streams the loop's steps live (SSE), then loads the final World.
+    [ ] Reasoning margins, the timeline continuity/on-criterion verdicts, and the receipt are shown.
 
-  This is the reference consumer. The native GPU renderer is a separate project (raw); here the
-  browser compiles the shipped shader. Every frame is grounded and reproducible.
+  ACCESSIBILITY:
+    - Every control is keyboard-reachable and labelled; gallery cards act as buttons (Enter/Space).
+    - The stage is role="img" with a live text description of what's rendered (screen-reader aware).
+    - A polite live-region announces every action, step, and error; audio is described in text.
+    - Honors prefers-reduced-motion (renders a static frame); a Motion toggle overrides either way.
+    - Visible focus rings; AA-contrast text.
+
+  The native GPU renderer is a separate project (raw); here the browser compiles the shipped shader.
 -->
 <html lang="en">
 <head>
@@ -26,99 +31,128 @@
 <title>studio-engine · experience chamber</title>
 <style>
   :root{
-    --bg:#0b0e13; --panel:#12161e; --line:#222a36; --ink:#e8ecf4; --dim:#8893a7;
+    --bg:#0b0e13; --panel:#12161e; --line:#2a3340; --ink:#eef2f8; --dim:#aab4c6;
     --a:#2dd4bf; --b:#7a5cff; --c:#fbbf24;
     --font:'Segoe UI',system-ui,sans-serif; --mono:'SFMono-Regular',Consolas,monospace;
   }
   *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
   body{margin:0;background:radial-gradient(1200px 600px at 70% -10%,#161b26,#0b0e13 60%);
        color:var(--ink);font-family:var(--font);min-height:100vh}
-  header{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:14px 20px;
-         border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(11,14,19,.85);
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+           clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  a.skip{position:absolute;left:-999px;top:0;z-index:20;background:var(--a);color:#04231f;
+         padding:8px 14px;border-radius:0 0 8px 0;font-weight:600}
+  a.skip:focus{left:0}
+  :focus-visible{outline:3px solid var(--a);outline-offset:2px;border-radius:6px}
+  header{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:12px 18px;
+         border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(11,14,19,.92);
          backdrop-filter:blur(8px);z-index:5}
-  h1{font-size:16px;font-weight:600;margin:0;letter-spacing:.5px}
+  h1{font-size:16px;font-weight:600;margin:0;letter-spacing:.4px}
   h1 small{color:var(--dim);font-weight:400}
   .grow{flex:1}
+  label.field{display:flex;flex-direction:column;font:11px/1.4 var(--font);color:var(--dim);gap:3px}
   input,select,button{font:inherit;color:var(--ink);background:#0e131b;border:1px solid var(--line);
        border-radius:8px;padding:7px 10px}
-  input[type=number]{width:74px}
+  input[type=number]{width:72px}
   button{cursor:pointer;background:linear-gradient(180deg,#1b2433,#141b27);transition:.15s}
   button:hover{border-color:var(--a);color:#fff}
-  button.primary{background:linear-gradient(180deg,var(--a),#1aa896);color:#06231f;border:none;font-weight:600}
-  main{display:grid;grid-template-columns:1fr 360px;gap:18px;padding:18px 20px}
-  @media(max-width:900px){main{grid-template-columns:1fr}}
+  button.primary{background:linear-gradient(180deg,var(--a),#1aa896);color:#042b25;border:none;font-weight:600}
+  button[aria-pressed=true]{border-color:var(--a);color:var(--a)}
+  #status{padding:7px 18px;font:12px/1.4 var(--mono);color:var(--dim);border-bottom:1px solid var(--line);
+          background:#0c1118;min-height:30px}
+  main{display:grid;grid-template-columns:1fr 372px;gap:18px;padding:18px}
+  @media(max-width:920px){main{grid-template-columns:1fr}}
   .stage{position:relative;aspect-ratio:1/1;width:100%;background:#06080c;border:1px solid var(--line);
          border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5)}
   .stage canvas,.stage .svgwrap{position:absolute;inset:0;width:100%;height:100%;display:block}
-  .stage .badge{position:absolute;left:12px;top:12px;font:12px/1 var(--mono);color:var(--dim);
-       background:rgba(0,0,0,.45);padding:6px 9px;border-radius:7px;border:1px solid var(--line);z-index:2}
-  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px}
-  .panel h2{font-size:12px;text-transform:uppercase;letter-spacing:1.2px;color:var(--dim);margin:0 0 12px}
+  .stage .badge{position:absolute;left:12px;top:12px;font:12px/1 var(--mono);color:var(--ink);
+       background:rgba(0,0,0,.55);padding:6px 9px;border-radius:7px;border:1px solid var(--line);z-index:2}
+  .stage[aria-busy=true]::after{content:"rendering…";position:absolute;inset:0;display:grid;
+       place-items:center;color:var(--dim);font:13px var(--mono);background:rgba(6,8,12,.6);z-index:3}
+  section.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px}
+  .panel h2{font-size:12px;text-transform:uppercase;letter-spacing:1.1px;color:var(--dim);margin:0 0 12px}
   .swatches{display:flex;gap:6px;margin:10px 0}
   .swatches i{flex:1;height:18px;border-radius:5px}
   .axis{display:flex;align-items:center;gap:8px;margin:5px 0;font:12px/1 var(--mono)}
   .axis .name{width:96px;color:var(--dim)}
   .axis .bar{flex:1;height:9px;background:#0c1118;border-radius:5px;overflow:hidden}
   .axis .fill{height:100%;background:linear-gradient(90deg,var(--b),var(--a))}
-  .axis.weak .fill{background:linear-gradient(90deg,#ff5c7a,var(--c))}
-  .axis .val{width:42px;text-align:right}
-  .tag{padding:2px 7px;border-radius:6px;font-size:11px}
-  .tag.verified{background:#0c3b2e;color:#43e0b0}
-  .tag.unverifiable{background:#3a3410;color:#e8c64a}
-  .tag.refuted{background:#3d1620;color:#ff7a93}
-  .receipt{font:11px/1.6 var(--mono);color:var(--dim);word-break:break-all}
-  .gallery{display:flex;gap:10px;overflow-x:auto;padding:4px 20px 20px}
-  .card{flex:0 0 132px;border:1px solid var(--line);border-radius:10px;padding:10px;cursor:pointer;
-        background:var(--panel);transition:.15s}
+  .axis.weak .fill{background:linear-gradient(90deg,#ff6b86,var(--c))}
+  .axis .val{width:46px;text-align:right}
+  .tag{padding:2px 7px;border-radius:6px;font-size:11px;font-weight:600}
+  .tag.verified{background:#0c3b2e;color:#5cebbd}
+  .tag.unverifiable{background:#403a12;color:#f2d35a}
+  .tag.refuted{background:#43161f;color:#ff8aa0}
+  .receipt{font:11px/1.7 var(--mono);color:var(--dim);word-break:break-all}
+  .gallery{display:flex;gap:10px;overflow-x:auto;padding:4px 18px 18px}
+  .card{flex:0 0 134px;border:1px solid var(--line);border-radius:10px;padding:10px;cursor:pointer;
+        background:var(--panel);transition:.15s;text-align:left;color:var(--ink)}
   .card:hover{border-color:var(--a);transform:translateY(-2px)}
   .card .t{font-size:12px;font-weight:600;margin-bottom:6px}
   .card .m{font:10px/1.4 var(--mono);color:var(--dim)}
   .card .strip{display:flex;height:8px;border-radius:4px;overflow:hidden;margin-top:8px}
   .card .strip i{flex:1}
-  #log{font:11px/1.5 var(--mono);color:var(--dim);white-space:pre-wrap;max-height:120px;overflow:auto}
-  .err{color:#ff7a93}
+  #log{font:11px/1.6 var(--mono);color:var(--dim);white-space:pre-wrap;max-height:130px;overflow:auto}
+  .err{color:#ff8aa0}
+  @media (prefers-reduced-motion: reduce){*{transition:none!important;scroll-behavior:auto!important}
+    .card:hover{transform:none}}
 </style>
 </head>
 <body>
+<a class="skip" href="#controls">Skip to controls</a>
 <header>
   <h1>studio-engine <small>· experience chamber</small></h1>
   <span class="grow"></span>
-  <input id="base" value="http://127.0.0.1:8777" size="22" title="API base URL">
-  <input id="seed" type="number" value="7" title="seed">
-  <select id="gen" title="generator"></select>
-  <select id="scheme" title="scheme">
-    <option>analogous</option><option>triadic</option><option>complementary</option><option>wide</option>
-  </select>
-  <button class="primary" id="run">simulate</button>
-  <button id="composeBtn">composite</button>
-  <button id="play">▶ audio</button>
-  <button id="stop">■</button>
+  <div id="controls" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+    <label class="field">API base<input id="base" value="http://127.0.0.1:8777" size="20" aria-label="API base URL"></label>
+    <label class="field">seed<input id="seed" type="number" value="7" aria-label="seed"></label>
+    <label class="field">generator<select id="gen" aria-label="generator"></select></label>
+    <label class="field">scheme<select id="scheme" aria-label="color scheme">
+      <option>analogous</option><option>triadic</option><option>complementary</option><option>wide</option>
+    </select></label>
+    <button class="primary" id="run">simulate</button>
+    <button id="streamBtn">watch it think</button>
+    <button id="composeBtn">composite</button>
+    <button id="play" aria-pressed="false" aria-label="Play audio">▶ audio</button>
+    <button id="stop" aria-label="Stop audio">■ stop</button>
+    <button id="motion" aria-pressed="true" aria-label="Toggle motion">motion: on</button>
+  </div>
 </header>
 
+<div id="status" role="status" aria-live="polite">Ready. Start the server, then load the gallery or press simulate.</div>
+
 <main>
-  <div class="stage" id="stage"><div class="badge" id="badge">— no world —</div></div>
+  <div class="stage" id="stage" role="img" aria-label="No world rendered yet" aria-busy="false">
+    <div class="badge" id="badge" aria-hidden="true">— no world —</div>
+  </div>
   <div>
-    <div class="panel">
-      <h2 id="worldTitle">world</h2>
-      <div class="swatches" id="swatches"></div>
+    <section class="panel" aria-labelledby="h-world">
+      <h2 id="h-world">world</h2>
+      <div id="worldTitle" style="font-weight:600;margin-bottom:4px">—</div>
+      <div class="swatches" id="swatches" aria-hidden="true"></div>
       <div id="meta" class="receipt"></div>
-    </div>
-    <div class="panel">
-      <h2>reasoning · per-axis margins (accepted)</h2>
+    </section>
+    <section class="panel" aria-labelledby="h-axes">
+      <h2 id="h-axes">reasoning · per-axis margins (accepted)</h2>
       <div id="axes"></div>
-    </div>
-    <div class="panel">
-      <h2>witnessed motion · timeline</h2>
+    </section>
+    <section class="panel" aria-labelledby="h-tl">
+      <h2 id="h-tl">witnessed motion · timeline</h2>
       <div id="timeline" class="receipt">—</div>
-    </div>
-    <div class="panel">
-      <h2>receipt · proof before trust</h2>
+    </section>
+    <section class="panel" aria-labelledby="h-rc">
+      <h2 id="h-rc">receipt · proof before trust</h2>
       <div id="receipt" class="receipt">—</div>
-    </div>
+    </section>
   </div>
 </main>
-<div class="gallery" id="gallery"></div>
-<div class="panel" style="margin:0 20px 24px"><h2>log</h2><div id="log"></div></div>
+<h2 class="sr-only">Gallery</h2>
+<div class="gallery" id="gallery" role="list" aria-label="Pre-built gallery worlds"></div>
+<section class="panel" style="margin:0 18px 24px" aria-labelledby="h-log">
+  <h2 id="h-log">log</h2>
+  <div id="log" role="log" aria-live="polite"></div>
+</section>
 
 <script>
 "use strict";
@@ -126,16 +160,17 @@ const $ = s => document.querySelector(s);
 const base = () => $("#base").value.replace(/\/$/, "");
 const GENS = ["phyllotaxis","gyroid","quasicrystal","attractor","harmonograph",
               "flowfield","metaballs","turbulence","rings","moire"];
-let RAF = 0, AUDIO = null;
+let RAF = 0, AUDIO = null, ES = null;
+let MOTION = !window.matchMedia || !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+function announce(msg){ $("#status").textContent = msg; }
 function log(msg, err){ const el=$("#log"); el.innerHTML += `<span class="${err?'err':''}">`+msg+"</span>\n"; el.scrollTop=el.scrollHeight; }
+function busy(b){ $("#stage").setAttribute("aria-busy", b?"true":"false"); }
 async function getJSON(path){ const r=await fetch(base()+path); if(!r.ok) throw new Error(path+" -> "+r.status); return r.json(); }
 async function postJSON(path,body){ const r=await fetch(base()+path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
   if(!r.ok) throw new Error(path+" -> "+r.status); return r.json(); }
 
 // ---------- a tiny evaluator for the recipe's GLSL-subset expression strings ----------
-// grammar matches strand.glsl emit: + - * , unary -, parens, numbers, vars x/y/t,
-// funcs sin cos exp abs sqrt, and safediv(a,b). No '/' operator is ever emitted.
 function makeEval(src){
   const s=src.replace(/\s+/g,""); let i=0;
   const peek=()=>s[i]||"";
@@ -174,19 +209,19 @@ function renderField(canvas, rp){
   const loc=gl.getAttribLocation(prog,"p"); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
   const pal=((rp.uniforms.u_palette&&rp.uniforms.u_palette.value)||[]).flatMap(hexToRGB);
   const vr=rp.value_range||[-1,1];
-  const period=(rp.domain&&rp.domain.period)||1.0, animatable=!(rp.domain&&rp.domain.animatable===false);
+  const period=(rp.domain&&rp.domain.period)||1.0, anim=MOTION&&!(rp.domain&&rp.domain.animatable===false);
   const U=n=>gl.getUniformLocation(prog,n);
-  function frame(ts){
+  function draw(t){
     const w=canvas.clientWidth, h=canvas.clientHeight; if(canvas.width!==w){canvas.width=w;canvas.height=h;}
     gl.viewport(0,0,canvas.width,canvas.height);
     gl.uniform2f(U("u_resolution"),canvas.width,canvas.height);
     gl.uniform2f(U("u_value_range"),vr[0],vr[1]);
     if(pal.length) gl.uniform3fv(U("u_palette[0]"),new Float32Array(pal));
-    gl.uniform1f(U("u_time"),animatable?((ts/1000)%period):0.0);
+    gl.uniform1f(U("u_time"),t);
     gl.drawArrays(gl.TRIANGLES,0,3);
-    RAF=requestAnimationFrame(frame);
   }
-  RAF=requestAnimationFrame(frame);
+  if(anim){ const frame=ts=>{ draw((ts/1000)%period); RAF=requestAnimationFrame(frame); }; RAF=requestAnimationFrame(frame); }
+  else { requestAnimationFrame(()=>draw(0)); }  // static frame (reduced motion / non-animatable)
 }
 
 // ---------- Canvas2D point render from a recipe ----------
@@ -211,17 +246,17 @@ function renderPoints(canvas, rp, palette){
     g.beginPath(); g.arc(ox+x*sc,oy+y*sc,1.5,0,7); g.fill(); }
 }
 
-// ---------- audio: synthesize from audio_program ----------
+// ---------- audio: synthesize from audio_program (described in text for non-visual access) ----------
 function playAudio(ap){
   stopAudio();
   const Ctx=window.AudioContext||window.webkitAudioContext; if(!Ctx){log("no Web Audio",true);return;}
   AUDIO=new Ctx(); const dur=4.0, t0=AUDIO.currentTime;
   const master=AUDIO.createGain(); master.connect(AUDIO.destination);
   const env=ap.envelope||{attack:0.18,release:0.30};
-  master.gain.setValueAtTime(0,t0);
+  master.gain.setValueAtTime(0.0001,t0);
   master.gain.linearRampToValueAtTime(0.9,t0+dur*(env.attack||0.18));
   master.gain.setValueAtTime(0.9,t0+dur*(1-(env.release||0.3)));
-  master.gain.linearRampToValueAtTime(0,t0+dur);
+  master.gain.linearRampToValueAtTime(0.0001,t0+dur);
   const curve=ap.pitch_curve&&ap.pitch_curve.length?ap.pitch_curve:[ap.base_freq||220];
   for(const o of (ap.oscillators||[])){
     const osc=AUDIO.createOscillator(), g=AUDIO.createGain();
@@ -230,9 +265,12 @@ function playAudio(ap){
     try{ osc.frequency.setValueCurveAtTime(fc,t0,dur); }catch(e){ osc.frequency.value=fc[0]; }
     osc.start(t0); osc.stop(t0+dur);
   }
-  log("♪ playing "+(ap.oscillators||[]).length+" partials, sweep "+curve.length+" steps");
+  $("#play").setAttribute("aria-pressed","true"); setTimeout(()=>$("#play").setAttribute("aria-pressed","false"),dur*1000);
+  const lo=Math.round(Math.min(...curve)), hi=Math.round(Math.max(...curve));
+  announce(`Playing ${(ap.oscillators||[]).length} partials, base ${Math.round(ap.base_freq)} Hz, pitch sweeping ${lo}–${hi} Hz over ${dur}s.`);
+  log("♪ audio: "+(ap.oscillators||[]).length+" partials, sweep "+curve.length+" steps");
 }
-function stopAudio(){ if(AUDIO){try{AUDIO.close();}catch(e){} AUDIO=null;} }
+function stopAudio(){ if(AUDIO){try{AUDIO.close();}catch(e){} AUDIO=null;} $("#play").setAttribute("aria-pressed","false"); }
 
 // ---------- render a World into the stage ----------
 function clearStage(){ if(RAF){cancelAnimationFrame(RAF);RAF=0;} const s=$("#stage");
@@ -253,8 +291,16 @@ function renderLayer(layer, palette){
   }
 }
 
+function describe(w){
+  const kinds=w.layers.map(l=>l.render_program.target==="glsl-fragment"?(l.organ_id+" field"):(l.organ_id+" point cloud"));
+  const motion = w.timeline ? `animating, ${w.timeline.period}s loop` : "static";
+  return `${w.title}: ${kinds.join(" composited with ")}; ${motion}; `+
+         `${w.layers.length} layer${w.layers.length>1?"s":""}; palette of ${w.palette.length} colours; `+
+         `${w.trajectory.converged?"converged":"best-effort (unconverged)"}, score ${w.receipt.final_score}.`;
+}
+
 function showWorld(w){
-  clearStage(); stopAudio(); window.__world=w;
+  clearStage(); stopAudio(); window.__world=w; busy(false);
   const pal=w.palette||[];
   if(pal[2])document.documentElement.style.setProperty("--a",pal[2]);
   if(pal[3])document.documentElement.style.setProperty("--b",pal[3]);
@@ -262,10 +308,11 @@ function showWorld(w){
   $("#worldTitle").textContent=w.title||"world";
   $("#swatches").innerHTML=pal.map(c=>`<i style="background:${c}"></i>`).join("");
   $("#badge").textContent=w.layers.map(l=>l.organ_id+"·"+l.render_program.target.split("-")[0]).join("  +  ");
+  $("#stage").setAttribute("aria-label", describe(w));
   [...w.layers].sort((a,b)=>a.z-b.z).forEach(l=>renderLayer(l,pal));
   const t=w.trajectory, acc=t.steps[t.accepted_index]||t.steps[t.steps.length-1]||{margins:{}};
   $("#axes").innerHTML=Object.entries(acc.margins||{}).map(([k,v])=>
-    `<div class="axis ${k===acc.weakest?'weak':''}"><span class="name">${k}</span>`+
+    `<div class="axis ${k===acc.weakest?'weak':''}"><span class="name">${k}${k===acc.weakest?' ◀':''}</span>`+
     `<span class="bar"><span class="fill" style="width:${Math.round(v*100)}%"></span></span>`+
     `<span class="val">${v.toFixed(3)}</span></div>`).join("")||"<div class=receipt>—</div>";
   const tl=w.timeline;
@@ -279,6 +326,7 @@ function showWorld(w){
   const r=w.receipt;
   $("#receipt").innerHTML=`id ${r.scene_id}<br>seed ${r.seed} · organs ${r.organ_ids.join(", ")}<br>`+
     `expr sha: ${r.artifact_shas.join(" · ")}`;
+  announce(describe(w));
   log("world "+w.id+" ("+w.layers.length+" layer"+(w.layers.length>1?"s":"")+")");
 }
 
@@ -287,22 +335,46 @@ GENS.forEach(g=>{ const o=document.createElement("option"); o.textContent=g; $("
 $("#gen").value="gyroid";
 
 async function loadGallery(){
-  try{ const d=await getJSON("/gallery"); $("#gallery").innerHTML="";
-    d.scenes.forEach(s=>{ const el=document.createElement("div"); el.className="card";
+  try{ announce("Loading gallery…"); const d=await getJSON("/gallery"); $("#gallery").innerHTML="";
+    d.scenes.forEach(s=>{ const el=document.createElement("button"); el.className="card"; el.setAttribute("role","listitem");
+      el.setAttribute("aria-label",`Load ${s.title}, ${s.generator}, ${s.converged?"converged":"best-effort"}, score ${s.score}`);
       el.innerHTML=`<div class="t">${s.title}</div><div class="m">${s.generator} · ${s.converged?"✓":"~"} ${s.score}</div>`+
-        `<div class="strip">${(s.palette||[]).map(c=>`<i style="background:${c}"></i>`).join("")}</div>`;
-      el.onclick=async()=>{ try{ showWorld(await getJSON("/scene/"+s.id)); }catch(e){log(e.message,true);} };
+        `<div class="strip" aria-hidden="true">${(s.palette||[]).map(c=>`<i style="background:${c}"></i>`).join("")}</div>`;
+      el.onclick=async()=>{ try{ busy(true); showWorld(await getJSON("/scene/"+s.id)); }catch(e){busy(false);announce("Error: "+e.message);log(e.message,true);} };
       $("#gallery").appendChild(el); });
+    announce("Gallery loaded: "+d.scenes.length+" worlds. Pick one, or press simulate.");
     log("gallery: "+d.scenes.length+" worlds");
-  }catch(e){ log("gallery failed: "+e.message+" (is the server running?)",true); }
+  }catch(e){ announce("Gallery failed: "+e.message+" — is the server running?"); log("gallery failed: "+e.message,true); }
 }
-$("#run").onclick=async()=>{ try{ showWorld(await postJSON("/simulate",
-  {seed:+$("#seed").value,generator:$("#gen").value,scheme:$("#scheme").value})); }catch(e){log(e.message,true);} };
-$("#composeBtn").onclick=async()=>{ try{ showWorld(await postJSON("/compose",
-  {seed:+$("#seed").value,organs:["gyroid","phyllotaxis"],scheme:$("#scheme").value})); }catch(e){log(e.message,true);} };
-$("#play").onclick=()=>{ const w=window.__world; if(w&&w.audio_program)playAudio(w.audio_program); else log("no audio_program",true); };
-$("#stop").onclick=stopAudio;
+function stopStream(){ if(ES){ES.close();ES=null;} }
+async function doRun(){ try{ busy(true); announce("Simulating "+$("#gen").value+"…");
+  showWorld(await postJSON("/simulate",{seed:+$("#seed").value,generator:$("#gen").value,scheme:$("#scheme").value})); }
+  catch(e){ busy(false); announce("Error: "+e.message); log(e.message,true);} }
+function doStream(){
+  stopStream(); busy(true);
+  const q=`?seed=${+$("#seed").value}&generator=${$("#gen").value}&scheme=${$("#scheme").value}`;
+  announce("Watching the loop think…"); log("stream "+q);
+  try{ ES=new EventSource(base()+"/simulate/stream"+q); }catch(e){ busy(false); log("SSE failed: "+e.message,true); return; }
+  ES.addEventListener("step",ev=>{ const s=JSON.parse(ev.data);
+    announce(`step ${s.index}: cohesion ${s.score}, weakest ${s.weakest} (${(s.margins&&s.margins[s.weakest])||"—"})`); });
+  ES.addEventListener("world",ev=>{ showWorld(JSON.parse(ev.data)); });
+  ES.addEventListener("done",()=>{ stopStream(); });
+  ES.onerror=()=>{ stopStream(); busy(false); };
+}
+$("#run").onclick=doRun;
+$("#streamBtn").onclick=doStream;
+$("#composeBtn").onclick=async()=>{ try{ busy(true); announce("Composing gyroid + phyllotaxis…");
+  showWorld(await postJSON("/compose",{seed:+$("#seed").value,organs:["gyroid","phyllotaxis"],scheme:$("#scheme").value})); }
+  catch(e){ busy(false); announce("Error: "+e.message); log(e.message,true);} };
+$("#play").onclick=()=>{ const w=window.__world; if(w&&w.audio_program)playAudio(w.audio_program); else announce("No audio for this world."); };
+$("#stop").onclick=()=>{ stopAudio(); announce("Audio stopped."); };
+$("#motion").onclick=()=>{ MOTION=!MOTION; const b=$("#motion"); b.setAttribute("aria-pressed",String(MOTION));
+  b.textContent="motion: "+(MOTION?"on":"off"); announce("Motion "+(MOTION?"on":"off")+".");
+  if(window.__world) showWorld(window.__world); };
 
+// init motion toggle label from prefers-reduced-motion
+$("#motion").setAttribute("aria-pressed",String(MOTION)); $("#motion").textContent="motion: "+(MOTION?"on":"off");
+window.addEventListener("resize",()=>{ if(window.__world && !RAF) showWorld(window.__world); });
 loadGallery();
 </script>
 </body>
