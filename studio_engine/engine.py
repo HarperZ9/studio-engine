@@ -19,6 +19,7 @@ from . import criteria as crit
 from . import temporal
 from .registry import gens as _gens
 from .corpus import Corpus
+from .certify import world_certificate
 
 _CORPUS_PATH = Path(__file__).resolve().parent / "_corpus.json"
 _G = 20  # feature grid resolution
@@ -236,7 +237,8 @@ def run(seed: int = 0, generator: str = "phyllotaxis", max_steps: int = 16,
                       round(coh, 4))
     yield ("world", World(id=sid, title=f"{generator.title()} #{seed}", layers=[layer],
                           audio_program=aprog, timeline=timeline, trajectory=traj,
-                          receipt=receipt, palette=palette, composition=None))
+                          receipt=receipt, palette=palette, composition=None,
+                          certificate=world_certificate(coh).to_dict()))
 
 
 def simulate(seed: int = 0, generator: str = "phyllotaxis", max_steps: int = 16,
