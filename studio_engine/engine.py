@@ -51,22 +51,21 @@ def _gens() -> dict[str, dict[str, Any]]:
                                     "z": round(0.2 + (rng >> 9) % 60 / 100.0, 3)},
             "bounds": {"freq": (3.0, 10.0), "z": (0.05, 0.95)},
             "axes": ["clean_freq", "contrast", "complexity"],
-            "render": lambda p, pl: fld.gyroid_field_svg(freq=p["freq"], palette=pl, samples=64),
+            "render": lambda p, pl: fld.gyroid_field_svg(freq=p["freq"], z=p["z"], palette=pl, samples=64),
             "points": None,
-            "field": lambda p, u, v: (math.sin(u * p["freq"]) * math.cos(v * p["freq"])
-                                      + math.sin(v * p["freq"]) * math.cos(p["z"] * p["freq"])
-                                      + math.sin(p["z"] * p["freq"]) * math.cos(u * p["freq"])),
+            "field": lambda p, u, v: fld.gyroid_value(p, u, v),
+            "expr": fld.gyroid_expr, "t0": fld.gyroid_t0,
+            "animatable": fld.GYROID_ANIMATABLE, "period": fld.gyroid_period,
         },
         "quasicrystal": {
             "params0": lambda rng: {"waves": float(3 + (rng % 5)), "scale": 6.0 + (rng >> 10) % 8},
             "bounds": {"waves": (3.0, 9.0), "scale": (4.0, 14.0)},
             "axes": ["fivefold", "contrast", "complexity"],
-            "render": lambda p, pl: fld.quasicrystal_svg(waves=int(round(p["waves"])), palette=pl, samples=72),
+            "render": lambda p, pl: fld.quasicrystal_svg(waves=int(round(p["waves"])), scale=p["scale"], palette=pl, samples=72),
             "points": None,
-            "field": lambda p, u, v: sum(
-                math.cos(math.cos(2 * math.pi * k / max(1, int(round(p["waves"]))) ) * u * p["scale"]
-                         + math.sin(2 * math.pi * k / max(1, int(round(p["waves"]))) ) * v * p["scale"])
-                for k in range(max(1, int(round(p["waves"]))))),
+            "field": lambda p, u, v: fld.quasicrystal_value(p, u, v),
+            "expr": fld.quasicrystal_expr, "t0": fld.quasicrystal_t0,
+            "animatable": fld.QUASICRYSTAL_ANIMATABLE, "period": fld.quasicrystal_period,
         },
         "attractor": {
             "params0": lambda rng: _init(att.PARAMS0, att.BOUNDS, rng), "bounds": att.BOUNDS,
@@ -83,18 +82,24 @@ def _gens() -> dict[str, dict[str, Any]]:
             "axes": ["contrast", "complexity"],
             "render": lambda p, pl: flow.svg(p, pl, samples=64), "points": None,
             "field": lambda p, u, v: flow.value(p, u, v),
+            "expr": flow.expr, "t0": lambda p: 0.0,
+            "animatable": flow.ANIMATABLE, "period": flow.period,
         },
         "metaballs": {
             "params0": lambda rng: _init(mb.PARAMS0, mb.BOUNDS, rng), "bounds": mb.BOUNDS,
             "axes": ["contrast", "complexity"],
             "render": lambda p, pl: mb.svg(p, pl, samples=64), "points": None,
             "field": lambda p, u, v: mb.value(p, u, v),
+            "expr": mb.expr, "t0": lambda p: 0.0,
+            "animatable": mb.ANIMATABLE, "period": mb.period,
         },
         "turbulence": {
             "params0": lambda rng: _init(turb.PARAMS0, turb.BOUNDS, rng), "bounds": turb.BOUNDS,
             "axes": ["contrast", "complexity"],
             "render": lambda p, pl: turb.svg(p, pl, samples=64), "points": None,
             "field": lambda p, u, v: turb.value(p, u, v),
+            "expr": turb.expr, "t0": lambda p: 0.0,
+            "animatable": turb.ANIMATABLE, "period": turb.period,
         },
     }
 
