@@ -14,11 +14,12 @@ import math
 from pathlib import Path
 from typing import Any
 
-from .model import (Artifact, Verdict, Step, Trajectory, Receipt, Scene, SceneLayer, OrganInfo, _sha)
-from .organs import (geometry as geo, palette as pal, fields as fld, raster as ras, sonify as snd,
+from .model import (Artifact, Verdict, Step, Trajectory, Receipt, Scene, World, Layer, OrganInfo, _sha)
+from .organs import (geometry as geo, palette as pal, fields as fld, sonify as snd,
                      attractor as att, harmonograph as harm, flowfield as flow,
-                     metaballs as mb, turbulence as turb)
+                     metaballs as mb, turbulence as turb, program as prog)
 from . import criteria as crit
+from . import temporal
 from .corpus import Corpus
 
 _CORPUS_PATH = Path(__file__).resolve().parent / "_corpus.json"
@@ -246,7 +247,7 @@ def generators() -> list[str]:
 def run(seed: int = 0, generator: str = "phyllotaxis", max_steps: int = 16,
         target: float = 0.9, floor: float = 0.6, scheme: str = "analogous",
         corpus_path: str | Path | None = _CORPUS_PATH):
-    """Generator form: yields ('step', Step) per iteration, then ('scene', Scene).
+    """Generator form: yields ('step', Step) per iteration, then ('world', World).
     Powers live streaming + interactive sessions; simulate() is the collected form."""
     gens = _gens()
     if generator not in gens:
@@ -285,23 +286,19 @@ def run(seed: int = 0, generator: str = "phyllotaxis", max_steps: int = 16,
     converged = coh >= target and all(s >= floor for s in margins.values())
     scores = [s.score for s in steps] or [coh]
 
-    params_art = Artifact("data", json.dumps({
-        "generator": generator, "params": {p: round(v, 4) for p, v in params.items()},
-        "palette": palette, "margins": {a: round(v, 4) for a, v in margins.items()},
-        "cohesion": round(coh, 4), "scores": scores, "converged": converged,
-    }), label="render-params").finalize()
-    layers = [SceneLayer(f"{generator}.params", "Live params", params_art, role="params", z=-1)]
-    artifact_shas = [params_art.sha256]
+    # --- assemble the World: render program (eye) + audio program (ear) + timeline (motion) ---
+    if spec["field"] is not None:
+        rprog = prog.field_program(generator, spec["expr"](params), palette, spec["t0"](params),
+                                   spec["animatable"], spec["period"](params))
+        render_id = "render.glsl"
+    else:
+        rprog = prog.point_program(generator, spec["recipe"](params), palette)
+        render_id = "render.recipe"
 
-    svg = Artifact("svg", spec["render"](params, palette).strip(), 720, 720, label=f"{generator}.svg").finalize()
-    layers.append(SceneLayer(generator, "Geometry", svg, role="geometry", z=0))
-    artifact_shas.append(svg.sha256)
-    if spec["points"]:
-        png = ras.render_phyllotaxis_png(spec["points"](params), palette, size=720)
-        layers.append(SceneLayer("raster.png", "Raster", png, role="raster", z=1))
-        artifact_shas.append(png.sha256)
+    svg = Artifact("svg", spec["render"](params, palette).strip(), 720, 720,
+                   label=f"{generator}.svg").finalize()
+    layer = Layer(generator, generator.title(), "render", 0, rprog, blend="normal", preview=svg)
 
-    audio = snd.audio_params(seed, palette, scores)
     steps.append(Step(len(steps), "witness", {p: round(v, 4) for p, v in params.items()},
                       score=round(coh, 4), margins={a: round(v, 4) for a, v in margins.items()},
                       note="accepted" if converged else "best-effort (unconverged)"))
@@ -309,22 +306,32 @@ def run(seed: int = 0, generator: str = "phyllotaxis", max_steps: int = 16,
     traj = Trajectory(steps, accepted_index=len(steps) - 1, converged=converged)
 
     corpus.add(feats)  # ground future novelty in what we just made
-    sid = _sha(f"{seed}:{generator}:{json.dumps(params, sort_keys=True)}:{svg.sha256}")
-    organ_ids = [generator, "palette.oklch", "criteria.multi_axis", "criteria.novelty", "sonify.params"]
-    if spec["points"]:
-        organ_ids.append("raster.png")
-    receipt = Receipt(sid, seed, organ_ids, artifact_shas, round(coh, 4))
-    yield ("scene", Scene(id=sid, title=f"{generator.title()} #{seed}", layers=layers,
-                          audio=audio, trajectory=traj, receipt=receipt, palette=palette))
+    sid = _sha(f"{seed}:{generator}:{json.dumps(params, sort_keys=True)}:{rprog.expr_sha256}:{svg.sha256}")
+    aprog = prog.audio_program(seed, palette, scores, wav_url=f"/audio/{sid}.wav")
+    timeline = temporal.build_timeline(spec, params)
+    organ_ids = [generator, "palette.oklch", "criteria.multi_axis", "criteria.novelty",
+                 "sonify.params", render_id]
+    receipt = Receipt(sid, seed, organ_ids, [rprog.expr_sha256, svg.sha256, aprog.expr_sha256],
+                      round(coh, 4))
+    yield ("world", World(id=sid, title=f"{generator.title()} #{seed}", layers=[layer],
+                          audio_program=aprog, timeline=timeline, trajectory=traj,
+                          receipt=receipt, palette=palette, composition=None))
 
 
 def simulate(seed: int = 0, generator: str = "phyllotaxis", max_steps: int = 16,
              target: float = 0.9, floor: float = 0.6, scheme: str = "analogous",
-             corpus_path: str | Path | None = _CORPUS_PATH) -> Scene:
-    """Collected form of run() — the full witnessed Scene."""
-    scene: Scene | None = None
+             corpus_path: str | Path | None = _CORPUS_PATH) -> World:
+    """Collected form of run() — the full witnessed World."""
+    world: World | None = None
     for _kind, _obj in run(seed, generator, max_steps, target, floor, scheme, corpus_path):
-        if _kind == "scene":
-            scene = _obj  # type: ignore[assignment]
-    assert scene is not None
-    return scene
+        if _kind == "world":
+            world = _obj  # type: ignore[assignment]
+    assert world is not None
+    return world
+
+
+def simulate_scene(seed: int = 0, generator: str = "phyllotaxis", max_steps: int = 16,
+                   target: float = 0.9, floor: float = 0.6, scheme: str = "analogous",
+                   corpus_path: str | Path | None = _CORPUS_PATH) -> Scene:
+    """Back-compat: the single-layer Scene projection of the World."""
+    return simulate(seed, generator, max_steps, target, floor, scheme, corpus_path).as_scene()
