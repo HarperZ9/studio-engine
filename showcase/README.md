@@ -16,7 +16,22 @@ re-derive in your own browser. Proof, not assertion.
 - **The binding** (center) — the `Certificate`. Not an opinion: a number (how far the frame sits from
   the bar) plus a fixed rule (`deviation <= tolerance` → `verified`). Oracle `structural-fitness-v1`.
 
-## A shared substrate, two witnesses actuate
+## Bring your own frame (the heart)
+
+Plug in **your own** photograph, gif, or video and perceive it *together* with the model:
+
+- **Shared perception** — the browser decodes your media to a canvas; the eye (`eye.js`, a faithful port
+  of coherence-membrane's perceptual hash, gated bit-for-bit in `tests/eye.test.mjs`) witnesses the real
+  pixels: an identity SHA-256, a 64-bit perceptual hash, and measured features (contrast, structure,
+  balance, hue). The hash is re-derivable — recompute it from the pixels and check the model.
+- **Both actuate, taking turns** — apply a transform (grayscale, invert, threshold, posterize, mirror,
+  edge-detect); then the model takes *its* turn, choosing a transform from what it measured and saying
+  why. Every change re-perceives the frame and witnesses the **drift** (perceptual distance /64).
+- **Discuss it** — ask what it sees, its structure, whether to trust it. It answers only what it
+  measured, every claim carrying the number behind it.
+- **Video** — load a video/gif, play, and "perceive this frame" to witness frames as they change.
+
+## A shared substrate, two witnesses actuate (generated mode)
 
 The frame is not fixed — it is a substrate **both the human and the model change**, with a real
 certificate re-deriving after every move.

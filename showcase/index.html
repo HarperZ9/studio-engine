@@ -29,6 +29,31 @@
   .lede{font-size:clamp(1.05rem,1.5vw,1.25rem);color:#d7cfba}
   .lede em{color:var(--ember);font-style:italic}
 
+  /* ---- bring your own frame ---- */
+  .section-h{font-family:var(--disp);font-weight:700;font-size:clamp(1.4rem,2.6vw,2rem);text-align:center;margin:.4rem 0 .3rem}
+  .section-sub{max-width:46rem;margin:0 auto 1.6rem;text-align:center;color:#cfc7b3;font-size:1rem;line-height:1.55}
+  #byo{margin:1rem auto 0;max-width:1100px}
+  .byo-grid{display:grid;gap:clamp(1rem,2.4vw,1.8rem);grid-template-columns:1fr 1fr;align-items:start}
+  .drop{border:1.5px dashed rgba(239,171,48,.4);border-radius:14px;background:rgba(15,33,34,.4);min-height:280px;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;transition:border-color .15s,background .15s}
+  .drop:hover,.drop:focus-visible,.drop.over{border-color:var(--ember);background:rgba(239,171,48,.06);outline:none}
+  .drop-empty{font-family:var(--mono);font-size:.72rem;letter-spacing:.1em;color:var(--muted);text-align:center;line-height:2}
+  .drop-empty span{font-size:.6rem;color:var(--prussian)}
+  .media-stage{width:100%;display:flex;align-items:center;justify-content:center}
+  .media-stage canvas,.media-stage video{max-width:100%;max-height:380px;border-radius:8px;display:block}
+  .byo-actions{margin-top:1rem}
+  .byo-actions .ctrl-label{font-family:var(--mono);font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ember);margin-bottom:.5rem}
+  .turn{font-family:var(--mono);font-size:.62rem;color:var(--muted);margin:.7rem 0;min-height:1.4em}
+  .chip.vid{margin-top:.3rem;color:var(--prussian);border-color:rgba(71,103,98,.4)}
+  .byo-log{max-height:300px}
+  .ev-h{font-family:var(--mono);font-size:.55rem;letter-spacing:.16em;text-transform:uppercase;color:var(--prussian);margin:.5rem 0 .4rem}
+  .mc-drift{margin-top:.6rem;font-family:var(--mono);font-size:.6rem;border-top:1px solid rgba(239,171,48,.12);padding-top:.5rem;color:var(--muted)}
+  .mc-drift.ok{color:var(--verified)} .mc-drift.chg{color:var(--ember)} .mc-drift b{color:var(--bone)}
+  .seam{display:flex;align-items:center;text-align:center;gap:1rem;max-width:1100px;margin:2.6rem auto 1.6rem;color:var(--prussian)}
+  .seam::before,.seam::after{content:"";flex:1;height:1px;background:var(--hairline)}
+  .seam span{font-family:var(--mono);font-size:.56rem;letter-spacing:.22em;text-transform:uppercase}
+  @media (max-width:820px){ .byo-grid{grid-template-columns:1fr} }
+
   /* ---- the dual aperture ---- */
   .frame-row{display:grid;gap:clamp(1rem,2vw,1.6rem);align-items:stretch;
     grid-template-columns:1fr minmax(260px,0.92fr) 1fr}
@@ -192,6 +217,45 @@
       you see an <em>image</em>, the model sees <em>structure</em>. Between you sits a verdict
       neither of you authored, and one you can <em>re-check yourself</em>.</p>
   </header>
+
+  <section id="byo" aria-labelledby="h-byo">
+    <h2 id="h-byo" class="section-h">Bring your own frame</h2>
+    <p class="section-sub">Plug in a photograph, a gif, or a video of your own. We perceive it together — then we
+      both change it, taking turns, and talk about what changed. The model says only what it measured, and every
+      claim is a number you can re-derive in your browser.</p>
+    <div class="byo-grid">
+      <div class="byo-left">
+        <div id="media-drop" class="drop" tabindex="0" role="button" aria-label="Drop or choose a photo, gif, or video">
+          <div id="media-empty" class="drop-empty">drop a photo · gif · video<br><span>or click to choose</span></div>
+          <div id="media-stage" class="media-stage" hidden>
+            <canvas id="media-canvas"></canvas>
+            <video id="media-video" hidden playsinline controls muted></video>
+          </div>
+        </div>
+        <input type="file" id="media-file" accept="image/*,video/*" hidden>
+        <div class="byo-actions">
+          <div class="ctrl-label">Transform it — you and the model take turns</div>
+          <div id="media-transforms" class="chat-chips"></div>
+          <div id="media-turn" class="turn"></div>
+          <button type="button" id="media-sample" class="chip vid">perceive this frame (for video)</button>
+        </div>
+      </div>
+      <div class="byo-right">
+        <div class="panel cert" id="media-cert" hidden>
+          <h3 class="ctitle">What the model witnessed — re-derive it</h3>
+          <div class="row"><span class="rk">identity · sha-256</span><span class="rv" id="mc-identity">—</span></div>
+          <div class="row"><span class="rk">dimensions</span><span class="rv" id="mc-dims">—</span></div>
+          <div class="row"><span class="rk">perceptual hash</span><span class="rv" id="mc-phash">—</span></div>
+          <div class="evidence"><div class="ev-h">measured features (advisory)</div><div class="grounds" id="mc-feats"></div></div>
+          <div class="mc-drift" id="mc-drift" hidden></div>
+        </div>
+        <div class="chat-log byo-log" id="media-log" role="log" aria-live="polite" aria-label="Conversation about your frame"></div>
+        <div class="chat-chips" id="media-chips" aria-label="Ask the model about your frame"></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="seam" role="separator" aria-label="or"><span>or shape a generated frame</span></div>
 
   <main class="frame-row">
 
