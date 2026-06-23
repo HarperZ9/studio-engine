@@ -95,9 +95,42 @@
   @keyframes fade{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
   .conn{text-align:center;font-family:var(--mono);font-size:.5rem;letter-spacing:.18em;color:var(--prussian);text-transform:uppercase;margin:.55rem 0 0}
 
-  /* ---- controls + narrative (wired in later increments) ---- */
-  #controls{margin:2rem auto 0;max-width:60rem}
-  .narrative{max-width:42rem;margin:2.6rem auto 1rem;color:#cfc7b3;font-size:1.05rem}
+  /* ---- controls ---- */
+  #controls{margin:2.2rem auto 0;max-width:62rem}
+  .ctrl-row{display:grid;gap:clamp(1rem,2.4vw,2rem);grid-template-columns:1.1fr 1.3fr .8fr;align-items:start}
+  .ctrl-group{min-width:0}
+  .ctrl-label{font-family:var(--mono);font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--ember);margin-bottom:.6rem;display:flex;justify-content:space-between;align-items:baseline;gap:.5rem}
+  .ctrl-val{color:var(--bone);font-size:.72rem;letter-spacing:.02em}
+  .ctrl-hint{font-family:var(--serif);font-size:.86rem;color:var(--muted);margin:.6rem 0 0;line-height:1.45}
+  .ctrl-hint b{color:var(--bone);font-weight:500}
+  .seg{display:flex;border:1px solid var(--hairline);border-radius:9px;overflow:hidden;background:rgba(15,33,34,.5)}
+  .seg button{flex:1;font-family:var(--mono);font-size:.64rem;letter-spacing:.02em;color:var(--muted);
+    background:transparent;border:0;border-right:1px solid var(--hairline);padding:.62em .3em;cursor:pointer;
+    transition:background .15s,color .15s}
+  .seg button:last-child{border-right:0}
+  .seg button:hover,.seg button:focus-visible{color:var(--bone);background:rgba(239,171,48,.08);outline:none}
+  .seg button[aria-pressed="true"]{color:var(--void);background:var(--ember);font-weight:500}
+  .slider-wrap{position:relative;padding-top:.2rem}
+  .slider-wrap input[type=range]{width:100%;margin:0;accent-color:var(--orange);cursor:pointer;height:1.4rem}
+  .slider-tick{position:absolute;top:.2rem;width:2px;height:1.4rem;background:var(--ember);opacity:.7;
+    transform:translateX(-1px);pointer-events:none}
+  .slider-ends{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.52rem;
+    color:var(--prussian);margin-top:.15rem;letter-spacing:.06em}
+  .slider-ends .tick-label{color:var(--ember);opacity:.85}
+  .switch{display:inline-flex;align-items:center;gap:.5rem;font-family:var(--mono);font-size:.64rem;
+    color:var(--bone);cursor:pointer}
+  .switch input{accent-color:var(--orange);width:1rem;height:1rem;cursor:pointer}
+  .cert-mode{font-family:var(--mono);font-size:.58rem;letter-spacing:.04em;color:var(--muted);
+    text-align:center;margin:1.1rem auto 0;max-width:48rem;min-height:1.1em}
+  .cert-mode.tamper{color:var(--ember)}
+  .cert-mode b{color:var(--bone);font-weight:500}
+
+  /* ---- narrative ---- */
+  .narrative{max-width:42rem;margin:3rem auto 1rem;color:#cfc7b3;font-size:1.06rem;line-height:1.66}
+  .narrative p{margin:0 0 1.05rem}
+  .narrative .tag{font-size:.56rem;vertical-align:.06em}
+  .narrative strong{color:var(--bone);font-weight:500}
   .status{position:fixed;left:-9999px}
   footer{text-align:center;margin-top:3rem;font-family:var(--mono);font-size:.56rem;letter-spacing:.1em;color:var(--muted)}
   footer a{color:var(--prussian)}
@@ -156,7 +189,54 @@
 
   </main>
 
-  <div id="controls"></div>
+  <section id="controls" aria-label="Frame and verdict controls">
+    <div class="ctrl-row">
+
+      <div class="ctrl-group">
+        <div class="ctrl-label">The frame</div>
+        <div class="seg" id="gen-switch" role="group" aria-label="Choose the generated frame">
+          <button type="button" data-gen="gyroid" aria-pressed="true">gyroid</button>
+          <button type="button" data-gen="quasicrystal" aria-pressed="false">quasicrystal</button>
+          <button type="button" data-gen="phyllotaxis" aria-pressed="false">phyllotaxis</button>
+        </div>
+        <p class="ctrl-hint">Switch the frame — both apertures and the certificate change together, in lockstep.</p>
+      </div>
+
+      <div class="ctrl-group">
+        <div class="ctrl-label"><span>Tamper with the score</span><span class="ctrl-val" id="cohesion-val">—</span></div>
+        <div class="slider-wrap">
+          <input type="range" id="cohesion" min="0.3" max="1" step="0.01" value="0.9"
+                 aria-label="Re-issue the certificate at a chosen cohesion score" aria-describedby="cohesion-note">
+          <span class="slider-tick" style="left:42.86%"></span>
+          <div class="slider-ends"><span>0.30</span><span class="tick-label">0.60 · the bar</span><span>1.00</span></div>
+        </div>
+        <p class="ctrl-hint" id="cohesion-note">Re-issue the certificate at any cohesion. Below <b>0.60</b> the
+          verdict flips to <span class="tag refuted">refuted</span> — then re-check that the flip is real, not my say-so.</p>
+      </div>
+
+      <div class="ctrl-group">
+        <div class="ctrl-label">Motion</div>
+        <label class="switch"><input type="checkbox" id="motion-toggle" checked> animate the field</label>
+        <p class="ctrl-hint">The fields breathe along their verified time axis. Off respects reduced-motion.</p>
+      </div>
+
+    </div>
+    <p class="cert-mode" id="cert-mode"></p>
+  </section>
+
+  <section class="narrative" aria-label="What you're looking at">
+    <p>Here is the whole idea, with nothing hidden. The engine on the right never saw your screen — it never
+      touched a pixel. It built this frame from a closed-form rule and judged it against <strong>named criteria</strong>
+      (golden-angle spacing, balance, coverage), writing down how well each one was met. You, on the left, see only
+      the image. Two ways of looking at the same thing.</p>
+    <p>Between us sits a <strong>certificate</strong>. It isn't my opinion and it isn't yours: it's a number — how
+      far the frame sits from the bar — and a fixed rule for turning that number into a verdict. You don't have to
+      take my word that it's right. Press <strong>re-check</strong> and your own browser re-derives the verdict
+      from the certificate's own evidence. Move the slider and watch it flip exactly where the rule says — at
+      <strong>0.60</strong>, not where I'd prefer.</p>
+    <p>That's the point of the thing. Not <em>trust the model</em>, not <em>trust me</em> — a frame we can both
+      stand in front of, and a verdict either of us can check.</p>
+  </section>
 
   <p class="status" id="status" role="status" aria-live="polite"></p>
 
