@@ -94,6 +94,27 @@ README.md             # (showcase/README.md) what it is, how to run, how to re-c
 - `showcase/README.md`.
 - **Verify:** Playwright across a mobile viewport; `node --check` on every `.js`; reduced-motion path.
 
+### Increment 5 — Talk to the model (the final presentable)
+The page becomes a *conversation* with the witness, not a static proof. The model speaks **only what
+the frame's witnessed structure licenses** — every line is grounded in real numbers (criteria margins,
+cohesion, the certificate's deviation/tolerance/verdict) and re-derivable in one click. This is the
+astonishing-yet-honest core: a model you can talk to that *cannot say anything it can't prove*, that
+*changes its verdict honestly under challenge*, and whose every word you can check yourself.
+
+- `dialogue.js` (pure, node-testable): `answer(id, world, state)` → `{text, grounds[], action}` for a
+  fixed question set (what are you looking at / how did you judge it / why this verdict / weakest axis /
+  should I trust you / what is this tool doing); `axisAnswer`, `greeting`, `reaction`, `freeText`. The
+  verdict bar is imported from `verdict.js` (single source — the model invents no rule of its own).
+- A chat panel: question chips + free-text; the model replies in first person, grounded; each claim that
+  rests on the certificate carries an inline **↻ re-derive** that runs the real `recheckCertificate` and
+  appends the reproduced result — a claim turned into a check in one click. Grounds render as evidence chips.
+- **Live, unprompted accountability:** tampering the slider posts a spontaneous model message ("you pushed
+  my score below my bar — I have to call this refuted now; I can't move my own bar — re-check me"); switching
+  frames posts a greeting; clicking an axis asks the model about that axis. Streamed reveal (reduced-motion safe).
+- **Verify:** node test — each fixture's `answer('why')` reproduces the baked verdict, `answer('judge')`
+  names the real least-satisfied axis, tamper-mode reproduces the flipped verdict, free-text falls back
+  honestly. Playwright — chips reply grounded; ↻ re-derive reproduces; tamper posts the honest reaction.
+
 ## Verification strategy
 
 - Pure logic (`verdict.js`) — node assertions (RED→GREEN), the re-check's correctness gate.
