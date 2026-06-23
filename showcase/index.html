@@ -126,6 +126,49 @@
   .cert-mode.tamper{color:var(--ember)}
   .cert-mode b{color:var(--bone);font-weight:500}
 
+  /* param actuation */
+  .pc{display:block;margin:0 0 .55rem}
+  .pc-label{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--mono);font-size:.6rem;
+    letter-spacing:.04em;color:var(--muted);margin-bottom:.1rem}
+  .pc-val{color:var(--bone);font-size:.66rem}
+  .pc input[type=range]{width:100%;margin:0;accent-color:var(--orange);cursor:pointer;height:1.2rem}
+  .btn.act{width:100%;color:var(--void);background:var(--ember);border-color:var(--ember);font-weight:600;margin-bottom:.55rem}
+  .btn.act:hover,.btn.act:focus-visible{background:var(--orange);border-color:var(--orange);color:var(--bone)}
+  .switch.motion{margin-top:.1rem}
+
+  /* ---- the conversation ---- */
+  #conversation{max-width:62rem;margin:2.6rem auto 0;border:1px solid var(--hairline);border-radius:14px;
+    background:rgba(15,33,34,.5);padding:1.2rem 1.3rem}
+  .chat-title{font-family:var(--disp);font-weight:600;font-size:1rem;margin:0 0 .25rem}
+  .chat-note{font-family:var(--serif);font-size:.9rem;color:var(--muted);margin:0 0 1rem;line-height:1.5}
+  .chat-log{max-height:340px;overflow:auto;display:flex;flex-direction:column;gap:.7rem;padding:.3rem .1rem .6rem}
+  .msg{max-width:84%;padding:.6rem .8rem;border-radius:12px;font-size:.96rem;line-height:1.5}
+  .msg .who{display:block;font-family:var(--mono);font-size:.5rem;letter-spacing:.18em;text-transform:uppercase;margin-bottom:.25rem;opacity:.8}
+  .msg.you{align-self:flex-end;background:rgba(71,103,98,.28);border:1px solid rgba(71,103,98,.4);color:var(--bone)}
+  .msg.you .who{color:var(--prussian)}
+  .msg.model{align-self:flex-start;background:linear-gradient(180deg,rgba(20,40,40,.7),rgba(15,33,34,.5));
+    border:1px solid var(--hairline);color:#ded7c4}
+  .msg.model .who{color:var(--ember)}
+  .msg .grounds{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.5rem}
+  .msg .ground{font-family:var(--mono);font-size:.55rem;color:var(--muted);background:rgba(0,0,0,.25);
+    border:1px solid var(--hairline);border-radius:999px;padding:.12em .55em}
+  .msg .ground .gk{color:var(--prussian)}
+  .msg-recheck{margin-top:.55rem}
+  .rc-inline{margin-top:.5rem;font-family:var(--mono);font-size:.58rem;line-height:1.6;border-top:1px solid rgba(239,171,48,.14);padding-top:.45rem}
+  .rc-inline .rc-line{color:var(--muted)} .rc-inline .rc-num{color:var(--bone)}
+  .rc-inline .rc-match{margin-top:.3rem} .rc-inline .rc-match.ok{color:var(--verified)} .rc-inline .rc-match.bad{color:var(--refuted)}
+  .chat-chips{display:flex;flex-wrap:wrap;gap:.4rem;margin:.9rem 0 .8rem}
+  .chip{font-family:var(--mono);font-size:.6rem;letter-spacing:.02em;color:var(--ember);cursor:pointer;
+    background:transparent;border:1px solid rgba(239,171,48,.35);border-radius:999px;padding:.42em .8em;transition:background .15s,border-color .15s}
+  .chip:hover,.chip:focus-visible{background:rgba(239,171,48,.12);border-color:var(--ember);outline:none}
+  .recheck-chip{color:var(--verified);border-color:rgba(127,207,155,.4)}
+  .recheck-chip:hover,.recheck-chip:focus-visible{background:rgba(127,207,155,.12);border-color:var(--verified)}
+  .chat-input-row{display:flex;gap:.5rem}
+  .chat-input-row input{flex:1;font-family:var(--serif);font-size:.95rem;color:var(--bone);background:rgba(0,0,0,.22);
+    border:1px solid var(--hairline);border-radius:9px;padding:.6em .8em}
+  .chat-input-row input:focus-visible{outline:none;border-color:var(--ember)}
+  .chat-input-row .btn{width:auto;padding:.6em 1.2em}
+
   /* ---- narrative ---- */
   .narrative{max-width:42rem;margin:3rem auto 1rem;color:#cfc7b3;font-size:1.06rem;line-height:1.66}
   .narrative p{margin:0 0 1.05rem}
@@ -203,25 +246,34 @@
       </div>
 
       <div class="ctrl-group">
-        <div class="ctrl-label"><span>Tamper with the score</span><span class="ctrl-val" id="cohesion-val">—</span></div>
-        <div class="slider-wrap">
-          <input type="range" id="cohesion" min="0.3" max="1" step="0.01" value="0.9"
-                 aria-label="Re-issue the certificate at a chosen cohesion score" aria-describedby="cohesion-note">
-          <span class="slider-tick" style="left:42.86%"></span>
-          <div class="slider-ends"><span>0.30</span><span class="tick-label">0.60 · the bar</span><span>1.00</span></div>
-        </div>
-        <p class="ctrl-hint" id="cohesion-note">Re-issue the certificate at any cohesion. Below <b>0.60</b> the
-          verdict flips to <span class="tag refuted">refuted</span> — then re-check that the flip is real, not my say-so.</p>
+        <div class="ctrl-label">You actuate the substrate</div>
+        <div id="param-controls"></div>
+        <p class="ctrl-hint">Move a real generator parameter. The frame regenerates, the model re-judges it,
+          and a <b>live certificate</b> re-derives — push it off-balance and watch an honest <span class="tag refuted">refuted</span>.</p>
       </div>
 
       <div class="ctrl-group">
-        <div class="ctrl-label">Motion</div>
-        <label class="switch"><input type="checkbox" id="motion-toggle" checked> animate the field</label>
-        <p class="ctrl-hint">The fields breathe along their verified time axis. Off respects reduced-motion.</p>
+        <div class="ctrl-label">The model actuates too</div>
+        <button id="model-improve" type="button" class="btn act">Let the model improve this frame ▶</button>
+        <label class="switch motion"><input type="checkbox" id="motion-toggle" checked> animate the field</label>
+        <p class="ctrl-hint">The model makes the single bounded move that most improves cohesion — its own
+          refine step. You both change the same frame; the verdict stays honest. (Motion respects reduced-motion.)</p>
       </div>
 
     </div>
     <p class="cert-mode" id="cert-mode"></p>
+  </section>
+
+  <section id="conversation" aria-labelledby="h-chat">
+    <h2 id="h-chat" class="chat-title">Talk to the model about this frame</h2>
+    <p class="chat-note">It answers only what it can prove from this frame — every claim is a number you can re-derive.
+      A live, open-ended conversation runs on the local engine; here the witness speaks from what it measured.</p>
+    <div class="chat-log" id="chat-log" role="log" aria-live="polite" aria-label="Conversation with the model"></div>
+    <div class="chat-chips" id="chat-chips" aria-label="Ask the model"></div>
+    <div class="chat-input-row">
+      <input type="text" id="chat-input" placeholder="ask about this frame…" aria-label="Ask the model about this frame" autocomplete="off">
+      <button type="button" id="chat-send" class="btn">ask</button>
+    </div>
   </section>
 
   <section class="narrative" aria-label="What you're looking at">
@@ -230,12 +282,16 @@
       (golden-angle spacing, balance, coverage), writing down how well each one was met. You, on the left, see only
       the image. Two ways of looking at the same thing.</p>
     <p>Between us sits a <strong>certificate</strong>. It isn't my opinion and it isn't yours: it's a number — how
-      far the frame sits from the bar — and a fixed rule for turning that number into a verdict. You don't have to
-      take my word that it's right. Press <strong>re-check</strong> and your own browser re-derives the verdict
-      from the certificate's own evidence. Move the slider and watch it flip exactly where the rule says — at
-      <strong>0.60</strong>, not where I'd prefer.</p>
+      far the frame sits from the bar — and a fixed rule for turning that number into a verdict. The engine that
+      judges runs right here in your browser, so you don't have to take my word: press <strong>re-derive</strong>
+      and it reproduces the verdict from the certificate's own evidence.</p>
+    <p>And the frame isn't fixed — it's a shared substrate <strong>we both actuate</strong>. You move a real
+      parameter; the model makes its own improving move; after every change the certificate re-derives, live and
+      honest. Push it off a clean value and the verdict turns <span class="tag refuted">refuted</span> — at the
+      engine's bar, not where anyone would prefer. Then talk to the model about what just happened, and check
+      every word it says.</p>
     <p>That's the point of the thing. Not <em>trust the model</em>, not <em>trust me</em> — a frame we can both
-      stand in front of, and a verdict either of us can check.</p>
+      shape and both stand in front of, and a verdict either of us can check.</p>
   </section>
 
   <p class="status" id="status" role="status" aria-live="polite"></p>

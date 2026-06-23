@@ -16,15 +16,25 @@ re-derive in your own browser. Proof, not assertion.
 - **The binding** (center) — the `Certificate`. Not an opinion: a number (how far the frame sits from
   the bar) plus a fixed rule (`deviation <= tolerance` → `verified`). Oracle `structural-fitness-v1`.
 
-## Try it
+## A shared substrate, two witnesses actuate
 
-- **Switch the frame** — gyroid / quasicrystal / phyllotaxis. Both apertures and the certificate move
-  in lockstep; the slider resets to the new frame's witnessed cohesion.
-- **Tamper with the score** — re-issue the certificate at any cohesion. Below **0.60** the verdict flips
-  to `refuted` — at the engine's own bar, not where anyone would prefer it.
-- **Re-check** — your browser re-derives the verdict purely from the certificate's own evidence
-  (`deviation`, `tolerance`). `✓ reproduces the certificate` is the proof reproducing itself. You don't
-  have to trust either of us.
+The frame is not fixed — it is a substrate **both the human and the model change**, with a real
+certificate re-deriving after every move.
+
+- **You actuate** — move a real generator parameter (gyroid `freq`/`z`, quasicrystal `waves`/`scale`,
+  phyllotaxis `angle`/`scale`). The frame regenerates, the model re-judges it, and the certificate
+  updates live. Push a value off a clean point and the verdict turns `refuted` — at the engine's bar.
+- **The model actuates** — "Let the model improve this frame" runs the engine's own coordinate-descent
+  refine step: the single bounded move that most increases cohesion. Watch it recover a tampered frame.
+- **Talk to it** — ask what it sees, how it judged, why this verdict, what's weakest. It answers only
+  what the witnessed structure licenses; every claim carries the numbers behind it and an inline
+  **↻ re-derive** that reproduces the verdict from the certificate's own evidence.
+- **Switch the frame** — gyroid / quasicrystal / phyllotaxis; both apertures, the controls, and the
+  certificate move in lockstep.
+
+The whole generate → judge → certify → refine loop runs **client-side** in `engine.js` — a faithful
+port of studio-engine, gated against the Python fixtures (`tests/engine.test.mjs`). So the verdict you
+see and re-derive is the one studio-engine would have reached. You don't have to trust either of us.
 
 ## Run it
 
