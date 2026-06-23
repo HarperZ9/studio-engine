@@ -96,19 +96,20 @@ function describeText(obs) {
   const fill = f.coverage > 0.6 ? "mostly bright" : f.coverage < 0.4 ? "mostly dark" : "evenly lit";
   const sym = f.balance > 0.85 ? "well-centred" : "off-balance";
   const str = f.entropy > 0.8 ? "richly textured" : f.entropy < 0.45 ? "flat and simple" : "moderately structured";
-  return `I'm looking at the ${obs.width}×${obs.height} frame you gave me — I never assumed what it is, I measured it: ${adj}, `
-    + `${fill}, ${str}, ${sym}, with a ${HUE_NAME(f.hue)} cast. My perceptual fingerprint of it is ${obs.phash} — recompute it from the pixels and you'll get the same.`;
+  return `I'm looking at the ${obs.width}×${obs.height} frame you gave me: ${adj}, ${fill}, ${str}, ${sym}, `
+    + `with a ${HUE_NAME(f.hue)} cast. If you're curious, my fingerprint of the pixels comes out as ${obs.phash}. Where shall we take it?`;
 }
 
 function mediaAnswer(id) {
   if (!lastObs) return { text: "Plug in a photo, gif, or video first — then I can tell you what I actually see.", grounds: [] };
   const f = lastObs.features, g = k => ({ k, v: fmt(f[k]) });
   if (id === "see" || id === "describe") return { text: describeText(lastObs), grounds: [{ k: "phash", v: lastObs.phash }, g("contrast"), g("entropy")], rederive: lastObs };
-  if (id === "structure") return { text: `Structurally I read entropy ${fmt(f.entropy)} (${f.entropy > 0.8 ? "rich detail" : f.entropy < 0.45 ? "large flat regions" : "middling texture"}) and balance ${fmt(f.balance)} `
-    + `(${f.balance > 0.85 ? "mass sits near the centre" : "the mass leans to one side"}). That's measured off the luminance, not guessed.`, grounds: [g("entropy"), g("balance"), g("coverage")] };
-  if (id === "trust") return { text: `Don't. My only hard claims are the identity SHA-256 of your file and the perceptual hash of the pixels — both recomputable right here. `
-    + `Everything else (contrast, structure, hue) is a measurement I show you the number for. Re-derive the hash and check me.`, grounds: [{ k: "phash", v: lastObs.phash }], rederive: lastObs };
-  return { text: `I can only speak to what I measured in your frame — its size, its perceptual hash, its contrast/structure/balance/hue. Ask me what I see, or to describe its structure — and re-derive the hash.`, grounds: [] };
+  if (id === "structure") return { text: `Its structure reads as entropy ${fmt(f.entropy)} (${f.entropy > 0.8 ? "rich detail" : f.entropy < 0.45 ? "large flat regions" : "middling texture"}) and balance ${fmt(f.balance)} `
+    + `(${f.balance > 0.85 ? "mass sits near the centre" : "the mass leans to one side"}). If we wanted to play with that, edges would pull the detail forward and threshold would simplify it.`, grounds: [g("entropy"), g("balance"), g("coverage")] };
+  if (id === "next") return { text: `A few directions we could take it: find its edges to pull the lines forward, threshold it down to where the real mass sits, `
+    + `or invert it and look at the negative. Run one and I'll tell you how far it moved the frame — or I'll take a turn and pick one myself.`, grounds: [{ k: "try", v: "edges · threshold · invert" }] };
+  return { text: `I can tell you what I see in your frame — its size, its colour, how it's laid out, how much detail it carries. `
+    + `Ask me what I see, its structure, or what we could try next.`, grounds: [] };
 }
 
 // The model's measured choice of transform: pick the move that most reveals what it's unsure of.
@@ -135,9 +136,10 @@ function actuate(key, who) {
   const stepDist = hamming(prevHash, lastObs.phash);   // real perceptual distance, pre -> post
   renderObservation(lastObs, { verdict: stepDist === 0 ? "MATCH" : "DRIFT", distance: stepDist });
   bubble(who, `${who === "you" ? "I" : "the model"} applied ${TRANSFORMS[key].label}.`, null, null);
-  const verb = stepDist === 0 ? "didn't move the perceptual hash at all" : `moved the perceptual hash by ${stepDist}/64 bits`;
-  bubble("model", `${who === "you" ? "You" : "I"} applied ${TRANSFORMS[key].label}; that ${verb} (now ${lastObs.phash}). `
-    + `${stepDist > 20 ? "A big change — the low-frequency structure really shifted." : stepDist === 0 ? "Visually, that left the structure I read unchanged." : "A modest change to the structure."} Re-derive it.`,
+  const verb = stepDist === 0 ? "barely moved how I see it" : `moved how I see it by ${stepDist}/64`;
+  bubble("model", `${who === "you" ? "You" : "I"} ran ${TRANSFORMS[key].label} — that ${verb}. `
+    + `${stepDist > 20 ? "Big shift; the whole structure changed." : stepDist === 0 ? "Looks about the same to me." : "A gentle change."} `
+    + `Want to take it further, or shall I take a turn?`,
     [{ k: "Δ", v: `${stepDist}/64` }, { k: "phash", v: lastObs.phash }], lastObs);
   setTurn(who === "you" ? "model" : "you");
 }
@@ -160,7 +162,7 @@ async function loadFile(file) {
 function setupVideo(url) {
   videoEl = $("media-video"); videoEl.hidden = false; videoEl.src = url;
   $("media-canvas").hidden = true;
-  videoEl.addEventListener("loadeddata", () => bubble("model", "Video loaded. Play it, then press “perceive this frame” to witness a frame — or sample while it plays and we watch it change together.", null, null), { once: true });
+  videoEl.addEventListener("loadeddata", () => bubble("model", "Video loaded. Play it, then press “perceive this frame” and I'll tell you what I see — do it as it plays and we can watch it change together.", null, null), { once: true });
 }
 
 function sampleVideoFrame() {
@@ -184,11 +186,11 @@ function drawSource(src, sw, sh) {
 function firstPerceive(intro) {
   lastObs = perceive(); baselineHash = lastObs.phash; prevHash = lastObs.phash;
   renderObservation(lastObs, null);
-  bubble("model", `${intro} ${describeText(lastObs)} Now we can both change it — apply a transform, then it's my turn. I'll only ever tell you what I measure.`, [{ k: "phash", v: lastObs.phash }, { k: "size", v: `${w}×${h}` }], lastObs);
+  bubble("model", `${intro} ${describeText(lastObs)} Let's play with it — change it however you like, and I'll take turns with you.`, [{ k: "phash", v: lastObs.phash }, { k: "size", v: `${w}×${h}` }], lastObs);
   setTurn("you");
 }
 
-const QUESTIONS = [{ id: "see", q: "What do you see?" }, { id: "structure", q: "What's the structure?" }, { id: "describe", q: "Describe it" }, { id: "trust", q: "Should I trust you?" }];
+const QUESTIONS = [{ id: "see", q: "What do you see?" }, { id: "structure", q: "What's its structure?" }, { id: "describe", q: "Describe it" }, { id: "next", q: "What could we try?" }];
 
 export function initMedia() {
   const input = $("media-file");

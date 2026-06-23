@@ -69,7 +69,7 @@ function showWorld(world) {
   $("badge").textContent = world.layers.map(l => l.organ_id + "·" + l.render_program.target.split("-")[0]).join("  +  ");
   renderReasoning({ params: $("params"), axes: $("axes"), trajectory: $("trajectory") }, world);
   showCertificate(world.certificate);
-  $("cert-mode").innerHTML = `computed live from the frame you and the model are shaping — cohesion <b>${world.receipt.final_score.toFixed(4)}</b>, re-derive it →`;
+  $("cert-mode").innerHTML = `live, from the frame you're both shaping — holding together at <b>${world.receipt.final_score.toFixed(4)}</b>`;
   window.__world = world;
 }
 
@@ -179,7 +179,7 @@ function paramsFrom(world) {
   try {
     for (const name of Object.keys(FIXTURES)) { const w = await loadFixture(name); palettes[name] = w.palette; startParams[name] = paramsFrom(w); }
     selectGenerator("gyroid");
-    say({ text: "I'm the witness on the right. Move a slider, ask me to improve the frame, or just ask me what I see — and re-derive anything I claim. I can't move my own bar.", grounds: [{ k: "loop", v: "perceive · judge · prove" }], recheck: false });
+    say({ text: "I'm here on the right. Move a slider and watch the frame change, ask me to take a turn and improve it, or just ask me what I see. Let's make something.", grounds: [{ k: "you", v: "shape it" }, { k: "me", v: "shape it too" }], recheck: false });
   } catch (e) {
     announce("Failed to load the frame: " + e.message);
     $("stage").setAttribute("aria-label", "the frame failed to load");
