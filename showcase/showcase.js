@@ -9,6 +9,7 @@ import { renderFrame, renderReasoning, describe } from "./render.js";
 import { recheckCertificate } from "./verdict.js";
 import { synthesize, refineStep } from "./engine.js";
 import { answer, reaction, freeText, QUESTIONS } from "./dialogue.js";
+import { initMedia } from "./media.js";
 
 const $ = id => document.getElementById(id);
 const FIXTURES = { gyroid: "./worlds/gyroid.json", quasicrystal: "./worlds/quasicrystal.json", phyllotaxis: "./worlds/phyllotaxis.json" };
@@ -172,6 +173,7 @@ function paramsFrom(world) {
   const chips = $("chat-chips"); QUESTIONS.forEach(q => chips.appendChild(chip(q.q, () => askQuestion(q.id, q.q))));
   $("chat-send").addEventListener("click", sendFree);
   $("chat-input").addEventListener("keydown", e => { if (e.key === "Enter") sendFree(); });
+  initMedia();   // the "bring your own frame" arm — perceive + transform + discuss your own media
 
   try {
     for (const name of Object.keys(FIXTURES)) { const w = await loadFixture(name); palettes[name] = w.palette; startParams[name] = paramsFrom(w); }

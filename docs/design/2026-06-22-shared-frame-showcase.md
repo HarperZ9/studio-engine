@@ -115,6 +115,24 @@ astonishing-yet-honest core: a model you can talk to that *cannot say anything i
   names the real least-satisfied axis, tamper-mode reproduces the flipped verdict, free-text falls back
   honestly. Playwright — chips reply grounded; ↻ re-derive reproduces; tamper posts the honest reaction.
 
+### Increment 6 — Bring your own frame: shared perception + bilateral actuation over YOUR media
+The deepest arm, and the operator's true north: the user plugs in their own photograph / gif / video,
+and the model and user perceive it, discuss it, and BOTH transform it (taking turns) — together, witnessed,
+re-checkable. The browser decodes any media via canvas; `eye.js` is a faithful port of coherence-membrane's
+perceptual hash (dHash), gated bit-for-bit against the Python eye (`tests/eye.test.mjs`, reference hashes
+from `perceptual_hash_raw`). `media.js` owns the section: file/drag load (image + video), `perceive()`
+(identity SHA-256 via SubtleCrypto + perceptual hash + measured features), a transform palette (grayscale/
+invert/threshold/posterize/mirror/sobel-edges) both witnesses apply turn-by-turn, a per-step **drift**
+distance (phash hamming), and a discussion grounded only in measured features with an inline "re-derive the
+hash from the pixels". Video: sample-the-current-frame perception ("watch together" seed).
+- **Verify:** node — `eye.test.mjs` reproduces the Python eye bit-for-bit (RGB, grayscale, RGBA-ignores-
+  alpha) + drift lattice. Playwright — upload an image → perception card populates → a transform posts a
+  real drift → the model takes its turn → a question answers from features → inline re-derive reproduces
+  the witnessed hash. (Done: 18 node assertions green; live flow verified.)
+
+This is the spine dogfooded the deepest: the *eye* perceives arbitrary user content client-side, faithfully,
+and BOTH parties actuate the same substrate — the [[shared-verified-perception-telos]] made public.
+
 ## Verification strategy
 
 - Pure logic (`verdict.js`) — node assertions (RED→GREEN), the re-check's correctness gate.
