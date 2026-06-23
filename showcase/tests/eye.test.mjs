@@ -3,6 +3,10 @@
 // The reference hexes below were computed by the Python eye (perceptual_hash_raw) on these exact buffers.
 //
 // Run: node --test showcase/tests/eye.test.mjs
+// Regenerate the reference hexes (if coherence_membrane.phash ever changes) with:
+//   PYTHONPATH=".../coherence-membrane/src" python -c "from coherence_membrane.phash import \
+//   perceptual_hash_raw; W,H=32,24; b=bytearray(); [b.extend(((x*8+y*3)%256,(x*x+y*7)%256,(x*5+y*y)%256)) \
+//   for y in range(H) for x in range(W)]; print(format(perceptual_hash_raw(bytes(b),W,H,'rgb'),'016x'))"
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { perceptualHash, hamming, compareDrift } from "../eye.js";

@@ -199,7 +199,9 @@ void main(){
 }
 
 function valueRange(gen, params) {
-  const g = GEN[gen], period = g.period(params), vals = [];
+  const g = GEN[gen];
+  if (g.kind !== "field") throw new Error("valueRange: fields only");
+  const period = g.period(params), vals = [];
   for (let s = 0; s < 8; s++) {
     const t = g === GEN.gyroid ? period * s / 8 : (gen === "quasicrystal" ? period * s / 8 : 0);
     const f = g.fieldAt(params, gen === "gyroid" ? t : (gen === "quasicrystal" ? t : g.t0(params)));
