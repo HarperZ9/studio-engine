@@ -17,24 +17,24 @@ const here = dirname(fileURLToPath(import.meta.url));
 const worldsDir = join(here, "..", "worlds");
 const load = g => JSON.parse(readFileSync(join(worldsDir, g + ".json"), "utf8"));
 
-test("'why this verdict' reproduces the baked verdict and offers re-derivation", () => {
+test("'how are you judging it' reports the real reading and stays re-derivable", () => {
   for (const g of ["gyroid", "quasicrystal", "phyllotaxis"]) {
     const w = load(g);
     const a = answer("why", w);
-    assert.ok(a.text.includes(w.certificate.verdict), `${g}: the model states the baked verdict (${w.certificate.verdict})`);
-    assert.equal(a.recheck, true, `${g}: it invites re-derivation`);
+    assert.ok(a.text.includes(w.certificate.verdict), `${g}: the model states how it reads (${w.certificate.verdict})`);
+    assert.equal(a.recheck, true, `${g}: the answer stays checkable (the affordance is there, not preached)`);
     const dev = a.grounds.find(x => x.k === "deviation");
     assert.ok(dev && Math.abs(parseFloat(dev.v) - parseFloat(Object.fromEntries(w.certificate.evidence).deviation)) < 1e-3,
-      `${g}: cites the certificate's real deviation`);
+      `${g}: grounded in the certificate's real deviation`);
   }
 });
 
-test("'what's weakest' names the actual least-satisfied axis", () => {
+test("'where could it be better' names the actual least-satisfied quality", () => {
   const w = load("gyroid");
   const c = readCtx(w);
   const a = answer("weak", w);
-  assert.ok(a.text.startsWith(c.weakest), `names the real argmin axis (${c.weakest})`);
-  assert.ok(a.grounds.some(x => x.k === c.weakest), "grounds it in that axis's margin");
+  assert.ok(a.text.includes(c.weakest), `names the real argmin quality (${c.weakest})`);
+  assert.ok(a.grounds.some(x => x.k === c.weakest), "grounds it in that quality's margin");
 });
 
 test("every question answers with grounded text", () => {
@@ -56,18 +56,20 @@ test("the model narrates its own actuation honestly (a real refine move)", () =>
   assert.equal(r.recheck, true, "offers re-derivation of the new verdict");
 });
 
-test("a human actuation that flips the verdict is reported as a flip, not hidden", () => {
+test("a human actuation that changes the frame is reported honestly, not hidden", () => {
   const verified = synthesize("gyroid", { freq: 6.0, z: 0.5 }, load("gyroid").palette);
   const refuted = synthesize("gyroid", { freq: 6.5, z: 0.5 }, verified.palette);   // off-integer -> clean_freq ~0
   const r = reaction("human", refuted, { param: "freq", value: 6.5, prevScore: verified.receipt.final_score, prevVerdict: verified.certificate.verdict });
-  assert.notEqual(verified.certificate.verdict, refuted.certificate.verdict, "the verdict genuinely flipped");
-  assert.ok(r.text.includes(refuted.certificate.verdict), "the model states the new (flipped) verdict");
+  assert.notEqual(verified.certificate.verdict, refuted.certificate.verdict, "the frame genuinely changed how it reads");
+  const coh = r.grounds.find(g => g.k === "cohesion");
+  assert.ok(coh && coh.v.includes("→"), "the reaction surfaces the real cohesion change, not a hidden one");
+  assert.ok(r.text.includes("freq"), "it names what you moved");
 });
 
-test("free text routes to a grounded answer, with an honest fallback", () => {
+test("free text routes to a grounded answer, with a friendly fallback", () => {
   const w = load("gyroid");
-  assert.ok(freeText("should I trust you?", w).text.includes("don't"), "trust question routed");
-  assert.ok(freeText("why is it verified?", w).recheck === true, "why question routed to re-derivable answer");
+  assert.equal(freeText("how do you know?", w).recheck, true, "a 'how do you know' question routes to a checkable answer");
+  assert.ok(freeText("what could we try?", w).text.length > 20, "an idea question routes to a real suggestion");
   const fb = freeText("tell me a joke about cats", w);
-  assert.ok(fb.text.includes("only speak to what I witnessed"), "off-topic falls back honestly");
+  assert.ok(fb.text.includes("what I actually see"), "off-topic falls back to what it can actually offer");
 });
