@@ -5,9 +5,10 @@
 // witnesses it. Then BOTH of you actuate it: you apply a transform, the model takes its own turn, and
 // every change is re-perceived and witnessed with a drift distance. You discuss it together, and the
 // model speaks only what it measured — re-derivable in your browser. Self-contained: owns its section.
-import { perceptualHash, hamming, compareDrift, features, identitySha256 } from "./eye.js";
+import { perceptualHash, hamming, features, identitySha256 } from "./eye.js";
 
 const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const reduced = () => !!window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 // ---- the transforms both witnesses can apply (pure ImageData -> ImageData) ----
@@ -60,7 +61,7 @@ function renderObservation(obs, drift) {
   $("mc-phash").textContent = obs.phash;
   const f = obs.features;
   $("mc-feats").innerHTML = [["contrast", f.contrast], ["coverage", f.coverage], ["structure", f.entropy], ["balance", f.balance], ["hue", f.hue]]
-    .map(([k, v]) => `<span class="ground"><span class="gk">${k}</span> ${fmt(v)}</span>`).join("");
+    .map(([k, v]) => `<span class="ground"><span class="gk">${esc(k)}</span> ${esc(fmt(v))}</span>`).join("");
   const dl = $("mc-drift");
   if (drift) { dl.hidden = false; dl.className = "mc-drift " + (drift.verdict === "MATCH" ? "ok" : "chg");
     dl.innerHTML = `since the last change: <b>${drift.verdict}</b>${drift.distance != null ? ` · perceptual distance <b>${drift.distance}/64</b>` : ""}`; }
@@ -71,7 +72,7 @@ function renderObservation(obs, drift) {
 function bubble(role, text, grounds, rederive) {
   const log = $("media-log"); const el = document.createElement("div"); el.className = "msg " + role;
   el.innerHTML = `<span class="who">${role === "you" ? "you" : "model"}</span><span class="body"></span>`
-    + (grounds && grounds.length ? `<div class="grounds">${grounds.map(g => `<span class="ground"><span class="gk">${g.k}</span> ${g.v}</span>`).join("")}</div>` : "")
+    + (grounds && grounds.length ? `<div class="grounds">${grounds.map(g => `<span class="ground"><span class="gk">${esc(g.k)}</span> ${esc(g.v)}</span>`).join("")}</div>` : "")
     + (rederive ? `<div class="msg-recheck"><button type="button" class="chip recheck-chip">↻ re-derive the hash from the pixels</button><div class="rc-inline" hidden></div></div>` : "");
   const body = el.querySelector(".body");
   log.appendChild(el); log.scrollTop = log.scrollHeight;
@@ -122,16 +123,16 @@ function modelChoice(f) {
 function actuate(key, who) {
   if (!lastObs) return;
   const t = TRANSFORMS[key]; prevHash = lastObs.phash;
-  if (t.whole && key === "mirror") { const tmp = ctx.getImageData(0, 0, w, h); ctx.save(); ctx.scale(-1, 1); ctx.putImageData(tmp, 0, 0); ctx.translate(-w, 0); ctx.drawImage(canvas, 0, 0); ctx.restore();
-    // simplest correct mirror: rebuild via a flipped draw
-    const off = document.createElement("canvas"); off.width = w; off.height = h; const oc = off.getContext("2d"); oc.putImageData(tmp, 0, 0);
-    ctx.clearRect(0, 0, w, h); ctx.save(); ctx.translate(w, 0); ctx.scale(-1, 1); ctx.drawImage(off, 0, 0); ctx.restore(); }
+  if (t.whole && key === "mirror") {            // horizontal flip via an offscreen flipped draw
+    const tmp = ctx.getImageData(0, 0, w, h);
+    const off = document.createElement("canvas"); off.width = w; off.height = h; off.getContext("2d").putImageData(tmp, 0, 0);
+    ctx.clearRect(0, 0, w, h); ctx.save(); ctx.translate(w, 0); ctx.scale(-1, 1); ctx.drawImage(off, 0, 0); ctx.restore();
+  }
   else if (t.kernel) ctx.putImageData(applyKernelEdges(imageData()), 0, 0);
   else { const img = imageData(); t.fn(img.data); ctx.putImageData(img, 0, 0); }
 
   lastObs = perceive();
-  const drift = compareDrift(originalSha, originalSha + ":" + lastObs.phash, baselineHash, lastObs.phash); // bytes changed -> DRIFT vs baseline
-  const stepDist = hamming(prevHash, lastObs.phash);
+  const stepDist = hamming(prevHash, lastObs.phash);   // real perceptual distance, pre -> post
   renderObservation(lastObs, { verdict: stepDist === 0 ? "MATCH" : "DRIFT", distance: stepDist });
   bubble(who, `${who === "you" ? "I" : "the model"} applied ${TRANSFORMS[key].label}.`, null, null);
   const verb = stepDist === 0 ? "didn't move the perceptual hash at all" : `moved the perceptual hash by ${stepDist}/64 bits`;

@@ -110,7 +110,6 @@ export function reaction(kind, world, extra = {}) {
       return { text: `I can't improve it further on these axes — this is the best I can witness: cohesion ${fmt(c.score)}, ${c.verdict}. `
           + `It's converged. Push it off-balance yourself if you want to see me recover it.`,
         grounds: [{ k: "cohesion", v: fmt(c.score) }, { k: "verdict", v: c.verdict }], recheck: true };
-    const lifted = c.weakest;
     return { text: `I moved ${extra.moved.param} from ${fmt(extra.moved.from, 2)} to ${fmt(extra.moved.to, 2)} — the single change that most `
         + `improved cohesion (${fmt(extra.prevScore)} → ${fmt(c.score)}), lifting my weakest criterion. See the field change on the left and the `
         + `axes shift on the right. I only ever keep a move that improves the score; check it.`,

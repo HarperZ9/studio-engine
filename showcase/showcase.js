@@ -12,6 +12,7 @@ import { answer, reaction, freeText, QUESTIONS } from "./dialogue.js";
 import { initMedia } from "./media.js";
 
 const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const FIXTURES = { gyroid: "./worlds/gyroid.json", quasicrystal: "./worlds/quasicrystal.json", phyllotaxis: "./worlds/phyllotaxis.json" };
 
 // The human's actuation surface, per generator: the real engine parameters and their bounds.
@@ -41,7 +42,7 @@ function showCertificate(cert) {
   const v = $("cert-verdict"); v.textContent = cert.verdict || "—"; v.className = "tag " + (cert.verdict || "unverifiable");
   $("cert-oracle").textContent = cert.oracle || "—";
   $("cert-evidence").innerHTML = (cert.evidence || []).map(([k, val]) =>
-    `<div class="ev"><span class="ek">${k}</span><span class="ev-v">${val}</span></div>`).join("");
+    `<div class="ev"><span class="ek">${esc(k)}</span><span class="ev-v">${esc(val)}</span></div>`).join("");
 }
 
 // Re-derive a certificate (the card's, or a chat message's snapshot) purely from its own evidence.
@@ -64,7 +65,7 @@ function showWorld(world) {
   stage.setAttribute("aria-label", describe(world));
   const handle = renderFrame(stage, world, { motion: motionOn });
   current = { world, stop: handle.stop };
-  $("swatches").innerHTML = (world.palette || []).map(c => `<i style="background:${c}"></i>`).join("");
+  $("swatches").innerHTML = (world.palette || []).filter(c => /^#[0-9a-fA-F]{3,8}$/.test(c)).map(c => `<i style="background:${c}"></i>`).join("");
   $("badge").textContent = world.layers.map(l => l.organ_id + "·" + l.render_program.target.split("-")[0]).join("  +  ");
   renderReasoning({ params: $("params"), axes: $("axes"), trajectory: $("trajectory") }, world);
   showCertificate(world.certificate);
@@ -134,7 +135,7 @@ function appendUser(text) {
 function say(payload, certSnapshot) {
   const log = $("chat-log");
   const el = document.createElement("div"); el.className = "msg model";
-  const grounds = (payload.grounds || []).map(g => `<span class="ground"><span class="gk">${g.k}</span> ${g.v}</span>`).join("");
+  const grounds = (payload.grounds || []).map(g => `<span class="ground"><span class="gk">${esc(g.k)}</span> ${esc(g.v)}</span>`).join("");
   el.innerHTML = `<span class="who">model</span><span class="body"></span>`
     + (grounds ? `<div class="grounds">${grounds}</div>` : "")
     + (payload.recheck ? `<div class="msg-recheck"><button type="button" class="chip recheck-chip">↻ re-derive this verdict</button><div class="rc-inline" hidden></div></div>` : "");
