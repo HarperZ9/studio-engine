@@ -42,12 +42,12 @@ export function readCtx(world) {
 const axisList = c => c.generator && c.margins ? Object.entries(c.margins).map(([k, v]) => `${k} ${fmt(v)}`).join(", ") : "—";
 
 export const QUESTIONS = [
-  { id: "look", q: "What are you looking at?" },
-  { id: "judge", q: "How did you judge it?" },
-  { id: "why", q: "Why this verdict?" },
-  { id: "weak", q: "What's your weakest axis?" },
-  { id: "trust", q: "Should I trust you?" },
-  { id: "meta", q: "What is this tool doing?" },
+  { id: "look", q: "What do you see?" },
+  { id: "judge", q: "How does it hold together?" },
+  { id: "weak", q: "Where could it be better?" },
+  { id: "idea", q: "What could we try?" },
+  { id: "why", q: "How are you judging it?" },
+  { id: "meta", q: "What is this place?" },
 ];
 
 // Each answer returns { text, grounds:[{k,v}], recheck:bool }. `grounds` are the exact numbers behind
@@ -56,78 +56,78 @@ export function answer(id, world) {
   const c = readCtx(world);
   switch (id) {
     case "look":
-      return { text: `I'm looking at ${c.title} — a ${c.isField ? "continuous field" : "point cloud"} from the `
+      return { text: `I'm looking at ${c.title} — a ${c.isField ? "flowing field" : "spray of points"} from the `
           + `${c.generator} generator${c.period ? `, breathing on a ${fmt(c.period)}s loop` : ""}, over a `
-          + `${c.palette.length}-colour palette. I never saw your screen; I built this from a closed-form rule and read its structure directly.`,
+          + `${c.palette.length}-colour palette. We can pull it in any direction from here — tell me what you'd like to see, or let me try something.`,
         grounds: [{ k: "generator", v: c.generator }, { k: "form", v: c.isField ? "field" : "points" }, { k: "palette", v: c.palette.length }], recheck: false };
     case "judge":
-      return { text: `I scored it on named criteria I didn't get to pick: ${axisList(c)}. Cohesion is the harmonic mean `
-          + `(${fmt(c.score)}), so a single weak axis drags the whole frame down — I converge only when it's good on every axis, not on average.`,
+      return { text: `I'm reading it on a few qualities at once: ${axisList(c)}. They fold into one feel for how well it's holding `
+          + `together (${fmt(c.score)}) — and because it's the harmonic mean, one weak quality pulls the whole thing down, which is exactly `
+          + `what makes it worth improving together.`,
         grounds: Object.entries(c.margins).map(([k, v]) => ({ k, v: fmt(v) })), recheck: false };
     case "why":
-      return { text: `My bar is fixed: a frame is structurally fit when its deviation from perfect cohesion is at most `
-          + `${fmt(c.tolerance, 2)}. Here deviation is ${fmt(c.deviation, 4)} ${c.deviation <= c.tolerance ? "≤" : ">"} `
-          + `${fmt(c.tolerance, 2)}, so I read it as ${c.verdict}. I didn't choose that bar for this frame — it's the same `
-          + `${c.oracle} rule for every frame. Don't take my word: re-derive it.`,
-        grounds: [{ k: "deviation", v: fmt(c.deviation, 4) }, { k: "tolerance", v: fmt(c.tolerance, 2) }, { k: "verdict", v: c.verdict }], recheck: true };
+      return { text: `I'm scoring it on a few named qualities and folding them together into one number — cohesion, ${fmt(c.score)} `
+          + `right now. Whether that reads as a clean "yes" comes down to a single fixed line, the same for every frame, so right now I'd `
+          + `call it ${c.verdict}. If you ever want to see exactly how the number becomes that call, you can open it up — but you don't have to.`,
+        grounds: [{ k: "cohesion", v: fmt(c.score) }, { k: "deviation", v: fmt(c.deviation, 4) }, { k: "reads as", v: c.verdict }], recheck: true };
     case "weak": {
-      const m = AXIS_MEANING[c.weakest] || "a criterion I measure on this frame";
-      return { text: `${c.weakest}, at ${fmt(c.weakestVal)} — ${m}. It's my least-satisfied axis, so it's what's holding the cohesion `
-          + `down. Ask me to improve it and watch which parameter I move, or push it lower yourself and watch me refuse to pretend.`,
+      const m = AXIS_MEANING[c.weakest] || "a quality I measure on this frame";
+      return { text: `If we want to push it further, ${c.weakest} (at ${fmt(c.weakestVal)}) is where there's most room — ${m}. `
+          + `Ask me to take a turn and watch which parameter I move toward it, or grab a slider and chase it yourself.`,
         grounds: [{ k: c.weakest, v: fmt(c.weakestVal) }, { k: "strongest", v: `${c.strongest} ${fmt(c.strongestVal)}` }], recheck: false };
     }
-    case "trust":
-      return { text: `No — don't. That's the whole point. Everything I just told you is a number you can recompute. Press "re-derive" `
-          + `and your own browser reproduces my verdict from this certificate's own evidence. If I'm wrong, you'll catch me — and you should.`,
-        grounds: [{ k: "oracle", v: c.oracle }], recheck: true };
+    case "idea":
+      return { text: `A few things we could try: let me take a turn and nudge it toward its weakest quality (${c.weakest}); or you grab a `
+          + `parameter and pull it somewhere unexpected and I'll react; or switch the generator and we start from a completely different shape. `
+          + `What are you in the mood to make?`,
+        grounds: [{ k: "next", v: `improve ${c.weakest}` }, { k: "or", v: "switch the frame" }], recheck: false };
     case "meta":
-      return { text: `Three moves, and you can audit each one. I perceive this frame into a witnessed form — the structure on the right. `
-          + `I check it against criteria I didn't author. And I hand you a certificate (verdict, oracle, evidence) you re-derive yourself. `
-          + `Perceive, judge, prove. Move a slider or ask me to improve it: we're both changing the same frame, and the verdict stays honest.`,
-        grounds: [{ k: "loop", v: "perceive · judge · prove" }], recheck: false };
+      return { text: `It's a place to make something with me, instead of just asking me for it. Bring your own image or generate one here; `
+          + `we both look at the same thing and we both get to change it. I'll tell you what I actually see, and if you're ever curious how I `
+          + `know, you can check — but mostly, let's just make something. Move something, or let me take a turn.`,
+        grounds: [{ k: "you", v: "shape it" }, { k: "me", v: "shape it too" }], recheck: false };
     default:
-      return { text: `I can only speak to what I witnessed in this frame — its structure, my criteria, and the certificate between us. `
-          + `Ask me what I'm looking at, how I judged it, why this verdict, or what's weakest — and re-derive whatever I claim.`,
+      return { text: `I can tell you what I actually see in this frame — what it's made of, how it holds together, where it could go next. `
+          + `Ask me what I see, where it could be better, or what we could try.`,
         grounds: [], recheck: false };
   }
 }
 
 // A spoken reaction to an actuation — by you (a slider) or by the model (a refine step). The frame
-// changed; the witness reports the new reading honestly, including a flip across the bar.
+// changed; the model reports what it now sees and keeps the collaboration moving.
 export function reaction(kind, world, extra = {}) {
   const c = readCtx(world);
   if (kind === "switch")
-    return { text: `New frame: ${c.title}. I read it as ${c.verdict} at cohesion ${fmt(c.score)}. Ask me anything about it — and check what I say.`,
-      grounds: [{ k: "verdict", v: c.verdict }, { k: "cohesion", v: fmt(c.score) }], recheck: true };
+    return { text: `New frame: ${c.title}. Holding together nicely (${fmt(c.score)}). What do you want to do with it — change something, or want me to take a turn?`,
+      grounds: [{ k: "cohesion", v: fmt(c.score) }], recheck: true };
   if (kind === "human") {
-    const flip = extra.prevVerdict && extra.prevVerdict !== c.verdict;
-    return { text: `You set ${extra.param} to ${fmt(extra.value, 2)}. I re-read the frame: cohesion ${fmt(extra.prevScore)} → ${fmt(c.score)}, `
-        + `so I now call it ${c.verdict}${flip ? ` — it flipped, and I won't pretend otherwise` : ""}. My bar didn't move; the frame did. Re-derive it.`,
-      grounds: [{ k: extra.param, v: fmt(extra.value, 2) }, { k: "deviation", v: fmt(c.deviation, 4) }, { k: "verdict", v: c.verdict }], recheck: true };
+    return { text: `You moved ${extra.param} to ${fmt(extra.value, 2)} — nice. It shifted how the frame reads (${fmt(extra.prevScore)} → ${fmt(c.score)}); `
+        + `${c.score >= extra.prevScore ? "that brought it together a little more" : "that loosened it a bit, which can be exactly what you want"}. Keep going, or hand it to me.`,
+      grounds: [{ k: extra.param, v: fmt(extra.value, 2) }, { k: "cohesion", v: `${fmt(extra.prevScore)} → ${fmt(c.score)}` }], recheck: true };
   }
   if (kind === "model") {
     if (!extra.moved)
-      return { text: `I can't improve it further on these axes — this is the best I can witness: cohesion ${fmt(c.score)}, ${c.verdict}. `
-          + `It's converged. Push it off-balance yourself if you want to see me recover it.`,
-        grounds: [{ k: "cohesion", v: fmt(c.score) }, { k: "verdict", v: c.verdict }], recheck: true };
-    return { text: `I moved ${extra.moved.param} from ${fmt(extra.moved.from, 2)} to ${fmt(extra.moved.to, 2)} — the single change that most `
-        + `improved cohesion (${fmt(extra.prevScore)} → ${fmt(c.score)}), lifting my weakest criterion. See the field change on the left and the `
-        + `axes shift on the right. I only ever keep a move that improves the score; check it.`,
-      grounds: [{ k: extra.moved.param, v: `${fmt(extra.moved.from, 2)} → ${fmt(extra.moved.to, 2)}` }, { k: "cohesion", v: `${fmt(extra.prevScore)} → ${fmt(c.score)}` }, { k: "verdict", v: c.verdict }], recheck: true };
+      return { text: `I've taken it about as far as I can from here — it's sitting at ${fmt(c.score)} and I can't find a move that helps. `
+          + `Your turn: pull it somewhere unexpected and I'll pick it back up.`,
+        grounds: [{ k: "cohesion", v: fmt(c.score) }], recheck: true };
+    return { text: `My turn — I nudged ${extra.moved.param} from ${fmt(extra.moved.from, 2)} to ${fmt(extra.moved.to, 2)}, the move that did the `
+        + `most for it (${fmt(extra.prevScore)} → ${fmt(c.score)}). Watch the field shift on the left and the qualities on the right. Where should we take it next?`,
+      grounds: [{ k: extra.moved.param, v: `${fmt(extra.moved.from, 2)} → ${fmt(extra.moved.to, 2)}` }, { k: "cohesion", v: `${fmt(extra.prevScore)} → ${fmt(c.score)}` }], recheck: true };
   }
   return answer("meta", world);
 }
 
-// Route free text to the nearest grounded answer; honest fallback otherwise.
+// Route free text to the nearest grounded answer; friendly fallback otherwise.
 export function freeText(input, world) {
   const s = (input || "").toLowerCase();
   const has = (...ks) => ks.some(k => s.includes(k));
-  if (has("trust", "believe", "lie", "fool", "honest")) return answer("trust", world);
-  if (has("why", "verdict", "refut", "verif", "pass", "fail", "deviation", "bar")) return answer("why", world);
+  if (has("try", "could", "idea", "next", "do with", "make")) return answer("idea", world);
   if (has("weak", "worst", "improve", "better", "lowest", "fix")) return answer("weak", world);
-  if (has("judge", "score", "criteri", "axis", "axes", "cohesion", "how")) return answer("judge", world);
+  if (has("trust", "believe", "lie", "honest", "know", "prove", "check")) return answer("why", world);
+  if (has("why", "verdict", "reads")) return answer("why", world);
+  if (has("judge", "score", "criteri", "axis", "axes", "cohesion", "hold", "how")) return answer("judge", world);
   if (has("look", "see", "what", "this", "frame", "show")) return answer("look", world);
-  if (has("tool", "doing", "the point", "purpose", "demo")) return answer("meta", world);
+  if (has("tool", "doing", "the point", "purpose", "place", "demo")) return answer("meta", world);
   return answer("__fallback__", world);
 }
 

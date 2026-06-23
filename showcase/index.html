@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The Shared Frame — one frame, two witnesses, one re-checkable verdict</title>
+<title>The Shared Frame — see anything, make anything, together</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Schibsted+Grotesk:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -211,18 +211,18 @@
 <div class="wrap">
 
   <header class="top">
-    <div class="eyebrow">A demonstration · studio-engine × coherence-membrane</div>
+    <div class="eyebrow">A shared place to see and make — with a model</div>
     <h1>The Shared Frame</h1>
-    <p class="lede">One frame. Two witnesses look at it through their own apertures —
-      you see an <em>image</em>, the model sees <em>structure</em>. Between you sits a verdict
-      neither of you authored, and one you can <em>re-check yourself</em>.</p>
+    <p class="lede">Bring anything — a photo, a gif, a video, or a frame you generate right here. You and a
+      model look at the same thing, talk about it, and take turns reshaping it. <em>A place to make
+      something, together.</em></p>
   </header>
 
   <section id="byo" aria-labelledby="h-byo">
     <h2 id="h-byo" class="section-h">Bring your own frame</h2>
-    <p class="section-sub">Plug in a photograph, a gif, or a video of your own. We perceive it together — then we
-      both change it, taking turns, and talk about what changed. The model says only what it measured, and every
-      claim is a number you can re-derive in your browser.</p>
+    <p class="section-sub">Drop in a photo, a gif, or a video of your own. You and a model see it together,
+      talk about it, and take turns reshaping it — soften it, find its edges, push it somewhere new. Whatever
+      it tells you it's seeing, it really measured, and you can check any of it. Mostly: play.</p>
     <div class="byo-grid">
       <div class="byo-left">
         <div id="media-drop" class="drop" tabindex="0" role="button" aria-label="Drop or choose a photo, gif, or video">
@@ -242,7 +242,7 @@
       </div>
       <div class="byo-right">
         <div class="panel cert" id="media-cert" hidden>
-          <h3 class="ctitle">What the model witnessed — re-derive it</h3>
+          <h3 class="ctitle">What the model sees</h3>
           <div class="row"><span class="rk">identity · sha-256</span><span class="rv" id="mc-identity">—</span></div>
           <div class="row"><span class="rk">dimensions</span><span class="rv" id="mc-dims">—</span></div>
           <div class="row"><span class="rk">perceptual hash</span><span class="rv" id="mc-phash">—</span></div>
@@ -255,7 +255,7 @@
     </div>
   </section>
 
-  <div class="seam" role="separator" aria-label="or"><span>or shape a generated frame</span></div>
+  <div class="seam" role="separator" aria-label="or"><span>or generate one from scratch</span></div>
 
   <main class="frame-row">
 
@@ -278,17 +278,17 @@
         <div class="row"><span class="rk">evidence</span><span class="rv"></span></div>
         <div class="evidence" id="cert-evidence"></div>
         <div class="recheck">
-          <button id="recheck-btn" type="button" class="btn">Re-check this verdict yourself</button>
+          <button id="recheck-btn" type="button" class="btn">See how it got there</button>
           <div class="recheck-out" id="recheck-out" hidden></div>
         </div>
-        <div class="conn">↞ both witnesses point here ↠</div>
+        <div class="conn">↞ you meet in the middle ↠</div>
       </div>
     </section>
 
     <!-- THE MODEL'S EYE -->
     <section class="panel meye" aria-labelledby="h-model">
       <h2 id="h-model">The model's eye</h2>
-      <div class="sub">the same frame, as witnessed structure</div>
+      <div class="sub">the same frame, as it reads it</div>
       <div class="block"><div class="label">derived form</div><div id="params"></div></div>
       <div class="block"><div class="label">how well each axis is met · ◀ weakest</div><div id="axes"></div></div>
       <div class="block"><div class="label">the reasoning it took to get here</div><div class="traj" id="trajectory"></div></div>
@@ -310,18 +310,18 @@
       </div>
 
       <div class="ctrl-group">
-        <div class="ctrl-label">You actuate the substrate</div>
+        <div class="ctrl-label">Your turn — change it</div>
         <div id="param-controls"></div>
-        <p class="ctrl-hint">Move a real generator parameter. The frame regenerates, the model re-judges it,
-          and a <b>live certificate</b> re-derives — push it off-balance and watch an honest <span class="tag refuted">refuted</span>.</p>
+        <p class="ctrl-hint">Move a parameter and the frame remakes itself, live — the model takes it in and
+          tells you how it reads now. Pull it somewhere unexpected and see where it goes.</p>
       </div>
 
       <div class="ctrl-group">
-        <div class="ctrl-label">The model actuates too</div>
+        <div class="ctrl-label">The model's turn</div>
         <button id="model-improve" type="button" class="btn act">Let the model improve this frame ▶</button>
         <label class="switch motion"><input type="checkbox" id="motion-toggle" checked> animate the field</label>
-        <p class="ctrl-hint">The model makes the single bounded move that most improves cohesion — its own
-          refine step. You both change the same frame; the verdict stays honest. (Motion respects reduced-motion.)</p>
+        <p class="ctrl-hint">It makes the single move that does the most for the frame, and tells you what it
+          changed and why. You're both shaping the same thing. (Motion respects reduced-motion.)</p>
       </div>
 
     </div>
@@ -330,8 +330,8 @@
 
   <section id="conversation" aria-labelledby="h-chat">
     <h2 id="h-chat" class="chat-title">Talk to the model about this frame</h2>
-    <p class="chat-note">It answers only what it can prove from this frame — every claim is a number you can re-derive.
-      A live, open-ended conversation runs on the local engine; here the witness speaks from what it measured.</p>
+    <p class="chat-note">Ask it anything about what you're both looking at — what it sees, where it might go next.
+      It tells you what it actually finds in the frame, and you can check any of it if you want to.</p>
     <div class="chat-log" id="chat-log" role="log" aria-live="polite" aria-label="Conversation with the model"></div>
     <div class="chat-chips" id="chat-chips" aria-label="Ask the model"></div>
     <div class="chat-input-row">
@@ -341,21 +341,16 @@
   </section>
 
   <section class="narrative" aria-label="What you're looking at">
-    <p>Here is the whole idea, with nothing hidden. The engine on the right never saw your screen — it never
-      touched a pixel. It built this frame from a closed-form rule and judged it against <strong>named criteria</strong>
-      (golden-angle spacing, balance, coverage), writing down how well each one was met. You, on the left, see only
-      the image. Two ways of looking at the same thing.</p>
-    <p>Between us sits a <strong>certificate</strong>. It isn't my opinion and it isn't yours: it's a number — how
-      far the frame sits from the bar — and a fixed rule for turning that number into a verdict. The engine that
-      judges runs right here in your browser, so you don't have to take my word: press <strong>re-derive</strong>
-      and it reproduces the verdict from the certificate's own evidence.</p>
-    <p>And the frame isn't fixed — it's a shared substrate <strong>we both actuate</strong>. You move a real
-      parameter; the model makes its own improving move; after every change the certificate re-derives, live and
-      honest. Push it off a clean value and the verdict turns <span class="tag refuted">refuted</span> — at the
-      engine's bar, not where anyone would prefer. Then talk to the model about what just happened, and check
-      every word it says.</p>
-    <p>That's the point of the thing. Not <em>trust the model</em>, not <em>trust me</em> — a frame we can both
-      shape and both stand in front of, and a verdict either of us can check.</p>
+    <p>This is a small place to <strong>make something with a model</strong>, instead of just asking one for it.
+      Bring your own frame or generate one here; you both look at the same thing, and you both get to change it —
+      you with your hands, it with its own sense of what would make it better.</p>
+    <p>It's a real collaborator, not a black box. When it tells you what it sees, or makes a move, that's something
+      it actually measured or built — running right here in your browser. So if you ever want to know <em>how</em>
+      it knows, you can open it up and check. But that's the floor, not the point — it's what lets you actually
+      build on what happens here.</p>
+    <p>And this frame is just the first thing. The same shared surface could hold a photograph, a piece of music, a
+      document, a design — anything two minds can look at and shape together. Start with what's in front of you:
+      move something, ask it something, or let it take a turn.</p>
   </section>
 
   <p class="status" id="status" role="status" aria-live="polite"></p>
