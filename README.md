@@ -131,3 +131,12 @@ Matures the shipped sensory-algebra organs (contour/SVG, OKLab, render-critic, r
 a composable, witnessed substrate.
 
 **Zain Dana Harper** — small tools with explicit edges. Built with Claude Code; reviewed, tested, owned.
+
+## For developers
+
+Keep the public README, package metadata, and examples aligned with current behavior. Before opening a PR or pushing a release, run the local package verification path.
+
+```bash
+python -m pip install -e ".[test]"
+python -m pytest
+```
