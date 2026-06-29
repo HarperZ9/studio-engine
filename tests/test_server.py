@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import functools
 import json
+import os
 import threading
 import unittest
 from http.client import HTTPConnection
@@ -90,6 +91,36 @@ class TestServer(unittest.TestCase):
     def test_unknown_scene_404(self):
         st, _ = self._get("/scene/deadbeef/program")
         self.assertEqual(st, 404)
+
+    def test_native_render_honest_when_not_built(self):
+        # With no RAW_NATIVE_CLI configured the endpoint reports an honest absence
+        # and fabricates no channels. (We do not assume a compiled binary in CI.)
+        old = os.environ.pop("RAW_NATIVE_CLI", None)
+        try:
+            st, body = self._post("/native/render", {"params": {"width": 64, "eye": [4, 4, 6]}})
+        finally:
+            if old is not None:
+                os.environ["RAW_NATIVE_CLI"] = old
+        self.assertEqual(st, 200)
+        r = json.loads(body)
+        self.assertFalse(r["available"])
+        self.assertIsNone(r["certificate"])
+        self.assertIn("not built", r["reason"])
+
+    def test_session_render_endpoint_records_step(self):
+        old = os.environ.pop("RAW_NATIVE_CLI", None)
+        try:
+            _, sbody = self._post("/session", {"seed": 7, "generator": "gyroid"})
+            sid = json.loads(sbody)["session_id"]
+            st, body = self._post(f"/session/{sid}/render", {"params": {"eye": [4, 4, 6]}})
+        finally:
+            if old is not None:
+                os.environ["RAW_NATIVE_CLI"] = old
+        self.assertEqual(st, 200)
+        r = json.loads(body)
+        self.assertEqual(r["step"]["kind"], "native-render")
+        self.assertFalse(r["step"]["ok"])           # honest: not built
+        self.assertEqual(len(r["state"]["native_renders"]), 1)
 
 
 if __name__ == "__main__":

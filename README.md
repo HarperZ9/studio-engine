@@ -1,5 +1,38 @@
 # studio-engine
 
+<p align="center">
+  <img src="docs/brand/studio-engine-hero.png" alt="Studio Engine, generate shaders, sound, and motion as replayable creative worlds">
+</p>
+
+> Generate shaders, sound, and motion as replayable creative worlds.
+
+## Try it
+
+```bash
+python -m studio_engine 7 gyroid
+python -m studio_engine.server 8777
+```
+
+Then open `handoff/reference-chamber.html` in a browser.
+
+## Why it matters
+
+AI creative output is weak when the artifact has no structure a person or later model can inspect. Studio Engine keeps the shader program, sound graph, motion timeline, criteria, and receipt together, so a generated world can be replayed and checked.
+
+## What to test first
+
+- Generate a `gyroid` world and inspect the JSON, SVG preview, and render program.
+- Serve the reference chamber and confirm the shipped GLSL compiles in the browser.
+- Change the seed or generator and verify the output identity and receipt change with it.
+
+## Current status
+
+- **Runtime:** Python 3.10+; zero third-party runtime dependencies.
+- **Surface:** CLI, local HTTP API, handoff package, reference browser chamber, WebGL shader payloads, WebAudio graph data, and replayable world receipts.
+- **Scope:** Studio Engine emits programs and evidence packets. Browser, GPU, and audio hosts render those programs.
+
+## Technical framing
+
 > A native, **zero-dependency** creative-verification engine. It composes generative + verification
 > organs into one witnessed loop and emits **Worlds** — self-describing render programs (GLSL for the
 > eye, a synth graph for the ear), a witnessed motion timeline, and the reasoning trajectory — for an

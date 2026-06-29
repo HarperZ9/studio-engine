@@ -14,6 +14,7 @@ from .engine import _gens, _evaluate, _refine, _clamp, _CORPUS_PATH
 from .organs import palette as pal, program as prog
 from . import criteria as crit
 from .corpus import Corpus
+from .native_render import RenderParams, native_render
 
 _WHY = {
     "novelty": "distance from the corpus — vary the parameters or palette to differ from prior work",
@@ -40,6 +41,11 @@ class Session:
         self.history: list[dict] = []
         self.n = 0
         self.frac = 0.34
+        # Two-way NATIVE render loop (afferent superhuman channels). last_camera
+        # is the previous view; the next re-render reuses it as prev_* so the
+        # native motion channel is real. None until the first render.
+        self.last_camera: dict | None = None
+        self.render_history: list[dict] = []
         self._record("perceive", "rough draft")
 
     def _eval(self):
@@ -73,6 +79,41 @@ class Session:
         self.params = _clamp(self.spec, {**self.params, **ov})
         return self._record("generate", f"operator inject: {sorted(ov) or 'none'}")
 
+    def render_step(self, params: dict | None = None, *, binary: str | None = None) -> dict:
+        """The ACTIVE two-way render: the model requests a native re-render with
+        a chosen view, receives the superhuman channels + witnessed certificate,
+        and can steer the next one. If the previous render's camera is known and
+        the caller did not pass an explicit previous camera, we feed it as prev_*
+        so the native motion channel reflects the real view change.
+
+        Returns a step dict carrying the native result (certificate + channel
+        summaries). Honest: when the binary is absent the step says so and no
+        channels are fabricated. Records into the session history so the
+        certificate round-trips alongside the refine trajectory.
+        """
+        rp = RenderParams.from_dict(params)
+        if self.last_camera and rp.prev_eye is None and rp.prev_target is None and rp.prev_up is None:
+            rp.prev_eye = tuple(self.last_camera["eye"])
+            rp.prev_target = tuple(self.last_camera["target"])
+            rp.prev_up = tuple(self.last_camera["up"])
+        res = native_render(rp, binary=binary)
+        if res.ok and res.camera:
+            self.last_camera = {"eye": res.camera["eye"], "target": res.camera["target"],
+                                "up": res.camera["up"]}
+        verdict = (res.certificate or {}).get("verdict")
+        note = "native channels perceived" if res.ok else f"native render unavailable: {res.reason}"
+        entry = {
+            "index": self.n, "phase": "perceive", "kind": "native-render",
+            "params": rp.to_dict(), "available": res.available, "ok": res.ok,
+            "reason": res.reason, "verdict": verdict,
+            "certificate": res.certificate, "channels": res.channels,
+            "camera": res.camera, "note": note,
+        }
+        self.render_history.append(entry)
+        self.history.append(entry)
+        self.n += 1
+        return entry
+
     def explain(self, axis: str | None = None) -> dict:
         """Cross-examine: why does this axis score what it does, and what would move it?"""
         _, margins, coh = self._eval()
@@ -100,4 +141,5 @@ class Session:
             "converged": coh >= self.target and all(s >= self.floor for s in margins.values()),
             "steps": self.n, "history": self.history,
             "program": asdict(self.program()),
+            "native_renders": self.render_history, "last_camera": self.last_camera,
         }

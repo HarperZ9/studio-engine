@@ -13,6 +13,8 @@ Endpoints (see handoff/ for the full contract):
   GET  /audio/{id}.wav         -> audio/wav                  baked sonification
   GET  /simulate/stream        -> SSE: 'step' events then 'world', then 'done'
   POST /session ... GET/POST /session/{id}/...              interactive cross-examine
+  POST /session/{id}/render    -> active two-way: native re-render -> channels + certificate
+  POST /native/render {params} -> direct native render -> channels + certificate (honest if not built)
 
 The frontend "experience chamber" consumes these. Scenes carry a `params` layer (z=-1) the
 chamber renders live; SVG/PNG layers are previews/fallbacks.
@@ -32,6 +34,7 @@ from .engine import simulate, run, library, generators
 from . import compose as comp
 from .organs import sonify as snd
 from .session import Session
+from .native_render import native_render
 from .model import _sha
 
 _SCENES: dict = {}     # id -> Scene
@@ -204,12 +207,33 @@ class Handler(BaseHTTPRequestHandler):
             _SESSIONS[sid] = sess
             return self._send({"session_id": sid, "state": sess.state()})
 
+        if path == "/native/render":
+            # Direct native render (no session): invoke the raw-native CLI for the
+            # given view and return its channel certificate + summaries. Honest
+            # "not built" result when no binary is configured.
+            try:
+                res = native_render(body.get("params"))
+            except (ValueError, TypeError) as e:
+                return self._send({"error": str(e)}, 400)
+            return self._send(res.to_dict())
+
         m = re.match(r"^/session/([0-9a-f]+)/(step|inject)$", path)
         if m:
             sess = _SESSIONS.get(m.group(1))
             if not sess:
                 return self._send({"error": "not found"}, 404)
             step = sess.step() if m.group(2) == "step" else sess.inject(body.get("params"))
+            return self._send({"session_id": m.group(1), "step": step, "state": sess.state()})
+
+        # The ACTIVE two-way native render: the model requests a re-render with a
+        # chosen view and receives the superhuman channels + witnessed certificate
+        # back. Honest absence when the native binary is not built.
+        m = re.match(r"^/session/([0-9a-f]+)/render$", path)
+        if m:
+            sess = _SESSIONS.get(m.group(1))
+            if not sess:
+                return self._send({"error": "not found"}, 404)
+            step = sess.render_step(body.get("params"))
             return self._send({"session_id": m.group(1), "step": step, "state": sess.state()})
 
         return self._send({"error": "not found", "path": path}, 404)
