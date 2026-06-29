@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "studio-engine"
 version = "0.2.0"
-description = "Native, zero-dependency creative-verification engine — witnessed Worlds (self-describing GLSL/audio render programs) for an experience-chamber frontend."
+description = "Zero-dependency Python engine that generates replayable creative worlds with shaders, audio data, motion timelines, and receipts."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "AGPL-3.0-or-later" }
