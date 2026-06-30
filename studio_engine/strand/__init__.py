@@ -1,4 +1,4 @@
-"""strand — the witnessed expression substrate.
+"""strand -- the witnessed expression substrate.
 
 One closed-form expression algebra (`expr`) is the single source every backend derives from:
 GLSL for the eye (`glsl`), a synth graph for the ear (`webaudio`), point recipes for clouds

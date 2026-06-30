@@ -1,8 +1,8 @@
-"""Composable criteria + cohesion — the verification half, advanced to multi-axis.
+"""Composable criteria + cohesion -- the verification half, advanced to multi-axis.
 
 Each criterion scores a candidate (`features` dict + generator `params`) in 0..1, higher =
 better, judged against a property it did NOT author. Cohesion = harmonic mean: a candidate
-must be good on EVERY axis (imbalance is punished), per the refine primitive — CORRECT, not
+must be good on EVERY axis (imbalance is punished), per the refine primitive -- CORRECT, not
 merely good-on-average.
 """
 from __future__ import annotations
@@ -70,6 +70,6 @@ def tag(s: float, target: float = 0.9, floor: float = 0.55) -> str:
 
 
 def cohesion(scores: list[float]) -> float:
-    """Harmonic mean — one bad axis tanks the whole. The opposite of averaging away a flaw."""
+    """Harmonic mean -- one bad axis tanks the whole. The opposite of averaging away a flaw."""
     vals = [max(1e-6, min(1.0, s)) for s in scores]
     return len(vals) / sum(1.0 / s for s in vals) if vals else 0.0

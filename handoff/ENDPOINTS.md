@@ -1,4 +1,4 @@
-# studio-engine API — endpoint reference
+# studio-engine API -- endpoint reference
 
 Base: `http://127.0.0.1:8777` · CORS: `*` · responses JSON unless noted. Types: `types.ts`.
 
@@ -7,18 +7,18 @@ Responses are **`World`** (schema `studio-engine/2`). Null-valued fields
 
 | Method | Path | Body | → |
 |---|---|---|---|
-| GET | `/health` | — | `Health` |
-| GET | `/generators` | — | `GeneratorsResponse` (10 generators) |
-| GET | `/library` | — | `LibraryResponse` (15 organs) |
-| GET | `/gallery` | — | `GalleryResponse` (pre-built world summaries) |
+| GET | `/health` | -- | `Health` |
+| GET | `/generators` | -- | `GeneratorsResponse` (10 generators) |
+| GET | `/library` | -- | `LibraryResponse` (15 organs) |
+| GET | `/gallery` | -- | `GalleryResponse` (pre-built world summaries) |
 | POST | `/simulate` | `SimulateRequest` | `World` |
 | POST | `/compose` | `ComposeRequest` | `World` (multi-layer; carries `composition`) |
-| GET | `/scene/{id}` | — | `World` \| 404 |
-| GET | `/scene/{id}/program` | — | `ProgramResponse` \| 404 |
-| GET | `/scene/{id}/filmstrip` | — | `Filmstrip` \| 404 |
-| GET | `/audio/{id}.wav` | — | `audio/wav` binary \| 404 |
+| GET | `/scene/{id}` | -- | `World` \| 404 |
+| GET | `/scene/{id}/program` | -- | `ProgramResponse` \| 404 |
+| GET | `/scene/{id}/filmstrip` | -- | `Filmstrip` \| 404 |
+| GET | `/audio/{id}.wav` | -- | `audio/wav` binary \| 404 |
 
-(`/scene/{id}` is the route for any cached world id — from `/simulate`, `/compose`, or the gallery.)
+(`/scene/{id}` is the route for any cached world id -- from `/simulate`, `/compose`, or the gallery.)
 
 ### GET /health
 ```json
@@ -55,7 +55,7 @@ Request (all fields optional):
 ```json
 { "seed": 99, "generator": "quasicrystal", "scheme": "wide" }
 ```
-- `seed`: int (default 0) — determines the rough draft + palette.
+- `seed`: int (default 0) -- determines the rough draft + palette.
 - `generator`: one of the 10 ids above (default `phyllotaxis`).
 - `scheme`: `"analogous" | "triadic" | "complementary" | "wide"` (default `analogous`).
 
@@ -82,7 +82,7 @@ Request (all fields optional):
   "source": "precision highp float; ...", "uniforms": {...}, "domain": {...},
   "value_range": [-1.41, 1.42], "color": {"mode":"ramp","stops":6}, "expr_sha256": "...", "notes": "..." } ] }
 ```
-One `RenderProgram` per layer — the same programs carried inline on `world.layers[].render_program`,
+One `RenderProgram` per layer -- the same programs carried inline on `world.layers[].render_program`,
 exposed standalone for clients that only want the renderable math. `404` if the world isn't cached.
 
 ### GET /audio/{id}.wav
@@ -91,25 +91,25 @@ browser from `world.audio_program` (oscillators + `pitch_curve` + `envelope`). `
 
 **Errors** are `{ "error": "...", "path"?: "..." }` with HTTP `400`/`404`.
 **Determinism:** identical `(seed, generator, scheme)` → identical `world.id` and `expr_sha256`s
-(for a fixed corpus; novelty is intentionally path-dependent — see INTEGRATION.md §2b).
+(for a fixed corpus; novelty is intentionally path-dependent -- see INTEGRATION.md §2b).
 
 ## Live & interactive (advanced)
 
 | Method | Path | Body | → |
 |---|---|---|---|
-| GET | `/simulate/stream?seed=&generator=&scheme=` | — | **SSE**: `event: step` ×N, then `event: world`, then `event: done` |
-| GET | `/scene/{id}/filmstrip` | — | `{scene_id, generator, palette, frames:[{index,phase,params,margins,score,weakest}]}` |
+| GET | `/simulate/stream?seed=&generator=&scheme=` | -- | **SSE**: `event: step` ×N, then `event: world`, then `event: done` |
+| GET | `/scene/{id}/filmstrip` | -- | `{scene_id, generator, palette, frames:[{index,phase,params,margins,score,weakest}]}` |
 | POST | `/session` | `{seed,generator,scheme}` | `{session_id, state}` |
-| POST | `/session/{id}/step` | — | `{session_id, step, state}` — auto-refine one iteration |
-| POST | `/session/{id}/inject` | `{params:{...}}` | `{session_id, step, state}` — operator steers parameters |
-| GET | `/session/{id}/explain?axis=` | — | `{axis, score, kind, tag, cohesion, why, all_margins}` |
-| GET | `/session/{id}` | — | session `state` (incl. `history` and `program`) |
+| POST | `/session/{id}/step` | -- | `{session_id, step, state}` -- auto-refine one iteration |
+| POST | `/session/{id}/inject` | `{params:{...}}` | `{session_id, step, state}` -- operator steers parameters |
+| GET | `/session/{id}/explain?axis=` | -- | `{axis, score, kind, tag, cohesion, why, all_margins}` |
+| GET | `/session/{id}` | -- | session `state` (incl. `history` and `program`) |
 
-- **SSE** — consume `/simulate/stream` with `EventSource`. Each `step` event is a `Step` (params +
+- **SSE** -- consume `/simulate/stream` with `EventSource`. Each `step` event is a `Step` (params +
   margins + cohesion); render the convergence live. The final `world` event carries the full `World`
   (parse it exactly like a `/simulate` response), then a terminal `done` event closes the stream.
-- **Filmstrip** — per-step params/margins for replaying/animating a finished world's convergence.
-- **Sessions** — the two-way cross-examine: `step` to auto-refine, `inject` to steer a parameter,
+- **Filmstrip** -- per-step params/margins for replaying/animating a finished world's convergence.
+- **Sessions** -- the two-way cross-examine: `step` to auto-refine, `inject` to steer a parameter,
   `explain` to ask why an axis scores what it does; `state.history` is the witnessed exchange.
-  **`state.program`** is a full `RenderProgram` of the *current steered candidate* — render it live to
+  **`state.program`** is a full `RenderProgram` of the *current steered candidate* -- render it live to
   see the world change as you cross-examine (re-fetch after each `step`/`inject`).

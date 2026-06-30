@@ -1,13 +1,13 @@
 <!doctype html>
 <!--
-  studio-engine — reference experience chamber (single file, zero build, zero deps, accessible).
+  studio-engine -- reference experience chamber (single file, zero build, zero deps, accessible).
 
   RUN:
     1. python -m studio_engine.server 8777      (from the repo root)
     2. open this file in a browser (serve it over http, or open directly; CORS is open).
 
   WHAT IT PROVES (manual verification checklist):
-    [ ] Load a gallery World, or "simulate" — a field generator (gyroid) RENDERS LIVE in WebGL by
+    [ ] Load a gallery World, or "simulate" -- a field generator (gyroid) RENDERS LIVE in WebGL by
         compiling render_program.source VERBATIM, and BREATHES as u_time animates over [0, period).
     [ ] A point generator (attractor/harmonograph/phyllotaxis) draws from its recipe on Canvas2D.
     [ ] "Play audio" synthesizes the audio_program (oscillators + pitch sweep) via Web Audio.
@@ -124,12 +124,12 @@
 
 <main>
   <div class="stage" id="stage" role="img" aria-label="No world rendered yet" aria-busy="false">
-    <div class="badge" id="badge" aria-hidden="true">— no world —</div>
+    <div class="badge" id="badge" aria-hidden="true">-- no world --</div>
   </div>
   <div>
     <section class="panel" aria-labelledby="h-world">
       <h2 id="h-world">world</h2>
-      <div id="worldTitle" style="font-weight:600;margin-bottom:4px">—</div>
+      <div id="worldTitle" style="font-weight:600;margin-bottom:4px">--</div>
       <div class="swatches" id="swatches" aria-hidden="true"></div>
       <div id="meta" class="receipt"></div>
     </section>
@@ -139,11 +139,11 @@
     </section>
     <section class="panel" aria-labelledby="h-tl">
       <h2 id="h-tl">witnessed motion · timeline</h2>
-      <div id="timeline" class="receipt">—</div>
+      <div id="timeline" class="receipt">--</div>
     </section>
     <section class="panel" aria-labelledby="h-rc">
       <h2 id="h-rc">receipt · proof before trust</h2>
-      <div id="receipt" class="receipt">—</div>
+      <div id="receipt" class="receipt">--</div>
     </section>
   </div>
 </main>
@@ -267,7 +267,7 @@ function playAudio(ap){
   }
   $("#play").setAttribute("aria-pressed","true"); setTimeout(()=>$("#play").setAttribute("aria-pressed","false"),dur*1000);
   const lo=Math.round(Math.min(...curve)), hi=Math.round(Math.max(...curve));
-  announce(`Playing ${(ap.oscillators||[]).length} partials, base ${Math.round(ap.base_freq)} Hz, pitch sweeping ${lo}–${hi} Hz over ${dur}s.`);
+  announce(`Playing ${(ap.oscillators||[]).length} partials, base ${Math.round(ap.base_freq)} Hz, pitch sweeping ${lo}--${hi} Hz over ${dur}s.`);
   log("♪ audio: "+(ap.oscillators||[]).length+" partials, sweep "+curve.length+" steps");
 }
 function stopAudio(){ if(AUDIO){try{AUDIO.close();}catch(e){} AUDIO=null;} $("#play").setAttribute("aria-pressed","false"); }
@@ -314,7 +314,7 @@ function showWorld(w){
   $("#axes").innerHTML=Object.entries(acc.margins||{}).map(([k,v])=>
     `<div class="axis ${k===acc.weakest?'weak':''}"><span class="name">${k}${k===acc.weakest?' ◀':''}</span>`+
     `<span class="bar"><span class="fill" style="width:${Math.round(v*100)}%"></span></span>`+
-    `<span class="val">${v.toFixed(3)}</span></div>`).join("")||"<div class=receipt>—</div>";
+    `<span class="val">${v.toFixed(3)}</span></div>`).join("")||"<div class=receipt>--</div>";
   const tl=w.timeline;
   $("#timeline").innerHTML = tl ? (
     `period ${tl.period}s<br>`+
@@ -344,7 +344,7 @@ async function loadGallery(){
       $("#gallery").appendChild(el); });
     announce("Gallery loaded: "+d.scenes.length+" worlds. Pick one, or press simulate.");
     log("gallery: "+d.scenes.length+" worlds");
-  }catch(e){ announce("Gallery failed: "+e.message+" — is the server running?"); log("gallery failed: "+e.message,true); }
+  }catch(e){ announce("Gallery failed: "+e.message+" -- is the server running?"); log("gallery failed: "+e.message,true); }
 }
 function stopStream(){ if(ES){ES.close();ES=null;} }
 async function doRun(){ try{ busy(true); announce("Simulating "+$("#gen").value+"…");
@@ -356,7 +356,7 @@ function doStream(){
   announce("Watching the loop think…"); log("stream "+q);
   try{ ES=new EventSource(base()+"/simulate/stream"+q); }catch(e){ busy(false); log("SSE failed: "+e.message,true); return; }
   ES.addEventListener("step",ev=>{ const s=JSON.parse(ev.data);
-    announce(`step ${s.index}: cohesion ${s.score}, weakest ${s.weakest} (${(s.margins&&s.margins[s.weakest])||"—"})`); });
+    announce(`step ${s.index}: cohesion ${s.score}, weakest ${s.weakest} (${(s.margins&&s.margins[s.weakest])||"--"})`); });
   ES.addEventListener("world",ev=>{ showWorld(JSON.parse(ev.data)); });
   ES.addEventListener("done",()=>{ stopStream(); });
   ES.onerror=()=>{ stopStream(); busy(false); };

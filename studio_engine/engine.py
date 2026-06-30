@@ -1,7 +1,7 @@
 """The simulation engine: perceive -> generate -> critique(multi-axis) -> refine -> witness.
 
 Advanced loop. Each candidate is judged on several criteria PLUS novelty, combined by
-cohesion (harmonic mean — every axis must hold). The loop reflects on the weakest axis and
+cohesion (harmonic mean -- every axis must hold). The loop reflects on the weakest axis and
 refines the parameter VECTOR toward it (bounded coordinate descent), converging only when
 CORRECT on every axis, not merely good on average. Novelty is grounded against a persistent
 corpus, so output is novel AND structured. Emits a Scene the chamber renders; deterministic
@@ -244,7 +244,7 @@ def run(seed: int = 0, generator: str = "phyllotaxis", max_steps: int = 16,
 def simulate(seed: int = 0, generator: str = "phyllotaxis", max_steps: int = 16,
              target: float = 0.9, floor: float = 0.6, scheme: str = "analogous",
              corpus_path: str | Path | None = _CORPUS_PATH) -> World:
-    """Collected form of run() — the full witnessed World."""
+    """Collected form of run() -- the full witnessed World."""
     world: World | None = None
     for _kind, _obj in run(seed, generator, max_steps, target, floor, scheme, corpus_path):
         if _kind == "world":

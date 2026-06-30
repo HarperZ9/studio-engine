@@ -1,8 +1,8 @@
-// studio-engine — frontend contract types.  schema: "studio-engine/2"
+// studio-engine -- frontend contract types.  schema: "studio-engine/2"
 // Mirrors studio_engine/model.py exactly. Import these in the chamber frontend.
 //
 // The engine now emits a `World` (schema "studio-engine/2") with self-describing
-// render programs — the visual half is data the frontend runs directly (a complete
+// render programs -- the visual half is data the frontend runs directly (a complete
 // WebGL1 fragment shader, or a point recipe), no longer prose to re-derive.
 // `Scene`/`SceneLayer` are kept as a legacy projection (World.as_scene()).
 //
@@ -31,7 +31,7 @@ export interface Artifact {
   sha256: string;
 }
 
-/** A criterion's judgement on an artifact — the verification half of the loop. */
+/** A criterion's judgement on an artifact -- the verification half of the loop. */
 export interface Verdict {
   criterion: string;
   tag: VerdictTag;
@@ -39,7 +39,7 @@ export interface Verdict {
   detail: string;
 }
 
-/** A re-checkable coherence-membrane verdict — an EXTERNAL criterion the engine did not author
+/** A re-checkable coherence-membrane verdict -- an EXTERNAL criterion the engine did not author
  *  (the anti-self-grading oracle). Wire shape matches coherence_membrane Certificate.to_dict(). */
 export interface Certificate {
   claim: string;
@@ -55,12 +55,12 @@ export interface Step {
   params: Record<string, number | string>;
   verdicts: Verdict[];        // one per axis (incl. "novelty")
   score: number;              // cohesion = harmonic mean of the margins
-  margins: Record<string, number>; // per-axis scores 0..1 — plot these as the convergence
+  margins: Record<string, number>; // per-axis scores 0..1 -- plot these as the convergence
   weakest: string;            // axis the next refine reflected on
   note: string;
 }
 
-/** The witnessed path from rough draft to accepted result — replayable reasoning. */
+/** The witnessed path from rough draft to accepted result -- replayable reasoning. */
 export interface Trajectory {
   steps: Step[];
   accepted_index: number;
@@ -89,7 +89,7 @@ export interface UniformSpec {
 }
 
 /**
- * A drop-in live render, emitted as data — the eye reads the engine's verified math.
+ * A drop-in live render, emitted as data -- the eye reads the engine's verified math.
  *
  * `glsl-fragment`: `source` is a COMPLETE WebGL1 (GLSL ES 1.00) fragment shader.
  *   Compile it VERBATIM. The host sets `u_resolution` (vec2), `u_time` (float),
@@ -110,7 +110,7 @@ export interface RenderProgram {
     animatable: boolean;
     period?: number;
   };
-  value_range: [number, number];  // [lo, hi] the field was sampled over — feeds u_value_range
+  value_range: [number, number];  // [lo, hi] the field was sampled over -- feeds u_value_range
   color: { mode: "ramp" | "index" | string; stops: number };
   expr_sha256: string;            // receipts the canonical strand expr / recipe
   notes: string;
@@ -163,7 +163,7 @@ export interface World {
   timeline?: Timeline;            // ABSENT for non-animatable visuals (e.g. point recipes)
   trajectory: Trajectory;
   receipt: Receipt;
-  palette: string[];              // hex swatches — theme the chamber from these
+  palette: string[];              // hex swatches -- theme the chamber from these
   composition?: Verdict;          // ABSENT for single-organ worlds; present from /compose
   certificate?: Certificate;      // external structural-fitness verdict (coherence-membrane oracle)
   schema_version: string;         // "studio-engine/2"
@@ -232,7 +232,7 @@ export interface Health { ok: boolean; service: string; version: string; }
 export interface GeneratorsResponse { generators: GeneratorId[]; }
 export interface LibraryResponse { organs: OrganInfo[]; }
 export interface GalleryResponse { scenes: GallerySummary[]; }
-/** GET /scene/{id}/program — drop-in render programs, one per layer. */
+/** GET /scene/{id}/program -- drop-in render programs, one per layer. */
 export interface ProgramResponse { scene_id: string; programs: RenderProgram[]; }
 
 // ---- live + interactive (advanced) ----

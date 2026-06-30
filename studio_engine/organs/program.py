@@ -1,4 +1,4 @@
-"""Assemble RenderProgram / AudioProgram from strand — the portable, drop-in render the chamber runs.
+"""Assemble RenderProgram / AudioProgram from strand -- the portable, drop-in render the chamber runs.
 
 Fields become a self-contained WebGL1 fragment whose `field()` body IS the emitted strand expr
 (so the pixels are the verified math); points become a JSON recipe. Audio becomes a synth graph
@@ -56,7 +56,7 @@ def field_program(generator: str, e: ex.Expr, palette: list, t0: float,
     """Build a glsl-fragment RenderProgram from a field expr.
 
     value_range is sampled across the WHOLE loop (every K-th frame over [0, period)) for animatable
-    fields, so the shipped coloring covers what the chamber actually renders as u_time sweeps — not
+    fields, so the shipped coloring covers what the chamber actually renders as u_time sweeps -- not
     just a single t0 slice. Non-animatable fields sample at t0.
     """
     src = glsl.emit_glsl(e)

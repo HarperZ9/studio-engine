@@ -1,6 +1,6 @@
 """Contract coverage: the handoff types/openapi must list EVERY generator + the right schema.
 
-This is the regression guard for the original wound this branch set out to kill — `types.ts` had
+This is the regression guard for the original wound this branch set out to kill -- `types.ts` had
 listed 3 of 8 generators. If a generator is added to the engine but not the contract, this fails.
 """
 from __future__ import annotations

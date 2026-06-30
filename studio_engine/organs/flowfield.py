@@ -36,7 +36,7 @@ def expr(params: dict) -> ex.Expr:
 
 
 def value(params: dict, u: float, v: float) -> float:
-    """Pure flow potential at (u, v), u,v in [-1, 1] — the expr sampled at t=0 (smooth, ~[-1,1])."""
+    """Pure flow potential at (u, v), u,v in [-1, 1] -- the expr sampled at t=0 (smooth, ~[-1,1])."""
     return ex.eval_expr(expr(params), {"u": u, "v": v, "t": 0.0})
 
 

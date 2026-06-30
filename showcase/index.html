@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The Shared Frame — see anything, make anything, together</title>
+<title>The Shared Frame -- see anything, make anything, together</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Schibsted+Grotesk:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -211,9 +211,9 @@
 <div class="wrap">
 
   <header class="top">
-    <div class="eyebrow">A shared place to see and make — with a model</div>
+    <div class="eyebrow">A shared place to see and make -- with a model</div>
     <h1>The Shared Frame</h1>
-    <p class="lede">Bring anything — a photo, a gif, a video, or a frame you generate right here. You and a
+    <p class="lede">Bring anything -- a photo, a gif, a video, or a frame you generate right here. You and a
       model look at the same thing, talk about it, and take turns reshaping it. <em>A place to make
       something, together.</em></p>
   </header>
@@ -221,7 +221,7 @@
   <section id="byo" aria-labelledby="h-byo">
     <h2 id="h-byo" class="section-h">Bring your own frame</h2>
     <p class="section-sub">Drop in a photo, a gif, or a video of your own. You and a model see it together,
-      talk about it, and take turns reshaping it — soften it, find its edges, push it somewhere new. Whatever
+      talk about it, and take turns reshaping it -- soften it, find its edges, push it somewhere new. Whatever
       it tells you it's seeing, it really measured, and you can check any of it. Mostly: play.</p>
     <div class="byo-grid">
       <div class="byo-left">
@@ -234,7 +234,7 @@
         </div>
         <input type="file" id="media-file" accept="image/*,video/*" hidden>
         <div class="byo-actions">
-          <div class="ctrl-label">Transform it — you and the model take turns</div>
+          <div class="ctrl-label">Transform it -- you and the model take turns</div>
           <div id="media-transforms" class="chat-chips"></div>
           <div id="media-turn" class="turn"></div>
           <button type="button" id="media-sample" class="chip vid">perceive this frame (for video)</button>
@@ -243,9 +243,9 @@
       <div class="byo-right">
         <div class="panel cert" id="media-cert" hidden>
           <h3 class="ctitle">What the model sees</h3>
-          <div class="row"><span class="rk">identity · sha-256</span><span class="rv" id="mc-identity">—</span></div>
-          <div class="row"><span class="rk">dimensions</span><span class="rv" id="mc-dims">—</span></div>
-          <div class="row"><span class="rk">perceptual hash</span><span class="rv" id="mc-phash">—</span></div>
+          <div class="row"><span class="rk">identity · sha-256</span><span class="rv" id="mc-identity">--</span></div>
+          <div class="row"><span class="rk">dimensions</span><span class="rv" id="mc-dims">--</span></div>
+          <div class="row"><span class="rk">perceptual hash</span><span class="rv" id="mc-phash">--</span></div>
           <div class="evidence"><div class="ev-h">measured features (advisory)</div><div class="grounds" id="mc-feats"></div></div>
           <div class="mc-drift" id="mc-drift" hidden></div>
         </div>
@@ -272,9 +272,9 @@
     <section class="binding" aria-labelledby="h-bind">
       <div class="panel cert" id="cert">
         <h2 class="ctitle" id="h-bind">The binding · certificate</h2>
-        <p class="claim" id="cert-claim">—</p>
-        <div class="row"><span class="rk">verdict</span><span class="rv"><span class="tag" id="cert-verdict">—</span></span></div>
-        <div class="row"><span class="rk">oracle</span><span class="rv" id="cert-oracle">—</span></div>
+        <p class="claim" id="cert-claim">--</p>
+        <div class="row"><span class="rk">verdict</span><span class="rv"><span class="tag" id="cert-verdict">--</span></span></div>
+        <div class="row"><span class="rk">oracle</span><span class="rv" id="cert-oracle">--</span></div>
         <div class="row"><span class="rk">evidence</span><span class="rv"></span></div>
         <div class="evidence" id="cert-evidence"></div>
         <div class="recheck">
@@ -306,13 +306,13 @@
           <button type="button" data-gen="quasicrystal" aria-pressed="false">quasicrystal</button>
           <button type="button" data-gen="phyllotaxis" aria-pressed="false">phyllotaxis</button>
         </div>
-        <p class="ctrl-hint">Switch the frame — both apertures and the certificate change together, in lockstep.</p>
+        <p class="ctrl-hint">Switch the frame -- both apertures and the certificate change together, in lockstep.</p>
       </div>
 
       <div class="ctrl-group">
-        <div class="ctrl-label">Your turn — change it</div>
+        <div class="ctrl-label">Your turn -- change it</div>
         <div id="param-controls"></div>
-        <p class="ctrl-hint">Move a parameter and the frame remakes itself, live — the model takes it in and
+        <p class="ctrl-hint">Move a parameter and the frame remakes itself, live -- the model takes it in and
           tells you how it reads now. Pull it somewhere unexpected and see where it goes.</p>
       </div>
 
@@ -330,7 +330,7 @@
 
   <section id="conversation" aria-labelledby="h-chat">
     <h2 id="h-chat" class="chat-title">Talk to the model about this frame</h2>
-    <p class="chat-note">Ask it anything about what you're both looking at — what it sees, where it might go next.
+    <p class="chat-note">Ask it anything about what you're both looking at -- what it sees, where it might go next.
       It tells you what it actually finds in the frame, and you can check any of it if you want to.</p>
     <div class="chat-log" id="chat-log" role="log" aria-live="polite" aria-label="Conversation with the model"></div>
     <div class="chat-chips" id="chat-chips" aria-label="Ask the model"></div>
@@ -342,14 +342,14 @@
 
   <section class="narrative" aria-label="What you're looking at">
     <p>This is a small place to <strong>make something with a model</strong>, instead of just asking one for it.
-      Bring your own frame or generate one here; you both look at the same thing, and you both get to change it —
+      Bring your own frame or generate one here; you both look at the same thing, and you both get to change it --
       you with your hands, it with its own sense of what would make it better.</p>
     <p>It's a real collaborator, not a black box. When it tells you what it sees, or makes a move, that's something
-      it actually measured or built — running right here in your browser. So if you ever want to know <em>how</em>
-      it knows, you can open it up and check. But that's the floor, not the point — it's what lets you actually
+      it actually measured or built -- running right here in your browser. So if you ever want to know <em>how</em>
+      it knows, you can open it up and check. But that's the floor, not the point -- it's what lets you actually
       build on what happens here.</p>
     <p>And this frame is just the first thing. The same shared surface could hold a photograph, a piece of music, a
-      document, a design — anything two minds can look at and shape together. Start with what's in front of you:
+      document, a design -- anything two minds can look at and shape together. Start with what's in front of you:
       move something, ask it something, or let it take a turn.</p>
   </section>
 

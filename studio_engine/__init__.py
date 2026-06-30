@@ -1,9 +1,9 @@
-"""studio-engine — a native, zero-dependency creative-verification simulation engine.
+"""studio-engine -- a native, zero-dependency creative-verification simulation engine.
 
 Composes generative + verification organs into one witnessed loop
-(perceive -> generate -> critique -> refine -> witness) and emits a `World` — layered
+(perceive -> generate -> critique -> refine -> witness) and emits a `World` -- layered
 self-describing render programs (GLSL for the eye, a synth graph for the ear), a witnessed
-motion timeline, and the reasoning trajectory — that the "experience chamber" frontend renders.
+motion timeline, and the reasoning trajectory -- that the "experience chamber" frontend renders.
 Built on the `strand` expression substrate: one closed-form algebra every backend derives from.
 Stdlib only.
 """

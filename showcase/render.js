@@ -1,8 +1,8 @@
-// render.js — the human eye.
+// render.js -- the human eye.
 //
 // Logic lifted verbatim from studio-engine's handoff/reference-chamber.html: it compiles a
-// World's `render_program` CLIENT-SIDE with no backend — WebGL1 for `glsl-fragment` fields,
-// Canvas2D for `point-recipe` clouds — so the same shipped math the engine verified is what
+// World's `render_program` CLIENT-SIDE with no backend -- WebGL1 for `glsl-fragment` fields,
+// Canvas2D for `point-recipe` clouds -- so the same shipped math the engine verified is what
 // paints the pixels. Adapted into an ES module that renders into a supplied stage element and
 // returns a `stop()` handle so a fixture switch can cancel the previous animation cleanly.
 
@@ -125,7 +125,7 @@ export function renderFrame(stageEl, world, opts = {}) {
   return { stop: () => stops.forEach(s => s()) };
 }
 
-// A plain-language description of the frame — the render's accessible alt text.
+// A plain-language description of the frame -- the render's accessible alt text.
 export function describe(world) {
   const kinds = world.layers.map(l => l.render_program.target === "glsl-fragment" ? (l.organ_id + " field") : (l.organ_id + " point cloud"));
   const motion = world.timeline ? `animating, ${world.timeline.period}s loop` : "static";
@@ -136,13 +136,13 @@ export function describe(world) {
 
 function fmtNum(v) { return typeof v === "number" ? (Number.isInteger(v) ? String(v) : v.toFixed(4)) : String(v); }
 
-// Render the model's eye — the witnessed structure: the derived form (params), the per-axis
+// Render the model's eye -- the witnessed structure: the derived form (params), the per-axis
 // margins (with the weakest axis marked), and the reasoning trajectory that produced the frame.
 export function renderReasoning(els, world) {
   const t = world.trajectory;
   const acc = t.steps[t.accepted_index] || t.steps[t.steps.length - 1] || { margins: {}, params: {} };
   const margins = acc.margins || {};
-  // The accepted (witness) step carries no `weakest` — it accepted. Fall back to the least-satisfied
+  // The accepted (witness) step carries no `weakest` -- it accepted. Fall back to the least-satisfied
   // axis: the argmin of the very margins shown, so the panel always names the axis the form meets
   // least, derived transparently from what's on screen (not fabricated).
   let weakest = acc.weakest;
@@ -152,13 +152,13 @@ export function renderReasoning(els, world) {
   }
   if (els.params) {
     els.params.innerHTML = Object.entries(acc.params || {}).map(([k, v]) =>
-      `<div class="kv"><span class="k">${k}</span><span class="v">${fmtNum(v)}</span></div>`).join("") || "<div class=dim>—</div>";
+      `<div class="kv"><span class="k">${k}</span><span class="v">${fmtNum(v)}</span></div>`).join("") || "<div class=dim>--</div>";
   }
   if (els.axes) {
     els.axes.innerHTML = Object.entries(margins).map(([k, v]) =>
       `<div class="axis ${k === weakest ? "weak" : ""}"><span class="name">${k}${k === weakest ? " ◀" : ""}</span>` +
       `<span class="bar"><span class="fill" style="width:${Math.round(v * 100)}%"></span></span>` +
-      `<span class="val">${(+v).toFixed(3)}</span></div>`).join("") || "<div class=dim>—</div>";
+      `<span class="val">${(+v).toFixed(3)}</span></div>`).join("") || "<div class=dim>--</div>";
   }
   if (els.trajectory) {
     els.trajectory.innerHTML = (t.steps || []).map(s =>

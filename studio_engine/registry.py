@@ -1,6 +1,6 @@
 """The generator registry: one declarative (organ, criterion, render, expr/recipe) binding each.
 
-A pure data table — each entry wires a generator's parameter seed/bounds, its criteria axes, its
+A pure data table -- each entry wires a generator's parameter seed/bounds, its criteria axes, its
 preview render, and (for fields) its strand expr / (for points) its recipe, plus animation metadata.
 Extracted from engine.py to keep that module focused on the loop. Data, not logic.
 """

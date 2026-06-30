@@ -1,5 +1,5 @@
-// The model speaks only what the frame licenses. Each answer must reproduce the witnessed numbers —
-// the baked verdict, the real least-satisfied axis, the actual cohesion — and offer re-derivation
+// The model speaks only what the frame licenses. Each answer must reproduce the witnessed numbers --
+// the baked verdict, the real least-satisfied axis, the actual cohesion -- and offer re-derivation
 // where it rests on the certificate. If the model could say something the structure doesn't support,
 // the whole "talk to it, then check it" promise breaks. This gates that.
 //

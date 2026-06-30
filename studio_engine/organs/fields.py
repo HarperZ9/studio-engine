@@ -1,9 +1,9 @@
 """Implicit-field generators (gyroid, quasicrystal) defined as strand exprs + their criteria.
 
-Each field is ONE strand expr f(u,v,t) — the single source the engine samples for features, the
+Each field is ONE strand expr f(u,v,t) -- the single source the engine samples for features, the
 GLSL backend renders, and the preview SVG draws. `t` is the animatable axis (the gyroid's z-slice,
 the quasicrystal's phase). This canonicalizes the field: the preview now samples the *verified*
-expr (domain u,v in [-1,1]), not a separate inlined formula — killing the old preview/feature drift.
+expr (domain u,v in [-1,1]), not a separate inlined formula -- killing the old preview/feature drift.
 Stdlib + strand only.
 """
 from __future__ import annotations

@@ -1,4 +1,4 @@
-"""Regenerate the showcase's baked World fixtures — provenance for the frame.
+"""Regenerate the showcase's baked World fixtures -- provenance for the frame.
 
 Each fixture is a real, witnessed `World` carrying a genuine coherence-membrane Certificate
 emitted by the unified engine. Deterministic (corpus off) so the baked frame can be
@@ -16,7 +16,7 @@ from pathlib import Path
 from studio_engine import engine
 
 # (generator, seed) -> fixture file. Gyroid is the hero (glsl, animatable); the other two
-# feed the "liquid" generator switch — one more glsl field + the iconic point spiral.
+# feed the "liquid" generator switch -- one more glsl field + the iconic point spiral.
 FIXTURES = {
     "gyroid": 7,
     "quasicrystal": 7,

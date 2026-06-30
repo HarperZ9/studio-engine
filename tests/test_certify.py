@@ -2,7 +2,7 @@
 
 studio-engine self-grades cohesion via its own tag(); this routes the converged cohesion through
 cm's structural_fitness_criterion (an INDEPENDENT criterion the engine did not author) -> a real
-cm Certificate. The verdict authority is cm's, not the engine's — the anti-self-grading fix."""
+cm Certificate. The verdict authority is cm's, not the engine's -- the anti-self-grading fix."""
 import unittest
 
 from coherence_membrane.certificate import Verdict

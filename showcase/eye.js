@@ -1,9 +1,9 @@
-// eye.js — the eye, in the browser. The shared perception of WHATEVER you plug in.
+// eye.js -- the eye, in the browser. The shared perception of WHATEVER you plug in.
 //
 // A faithful JS port of coherence-membrane's perceptual hash (phash.py): Rec.601 luma -> box-downscale
 // to 9x8 -> 64 adjacency bits (dHash). The browser decodes any media you drop in (png/jpg/gif/webp/
 // video frame) onto a canvas; this reads those real pixels and witnesses them exactly as the Python
-// eye would — gated bit-for-bit in tests/eye.test.mjs against reference hashes computed by the engine.
+// eye would -- gated bit-for-bit in tests/eye.test.mjs against reference hashes computed by the engine.
 // So when the model says "I perceive this", it's a number you can recompute. Plus drift (did it change?)
 // and honest descriptive features for discussion. The identity SHA-256 is computed via SubtleCrypto.
 const HASH_W = 8, HASH_H = 8;
@@ -61,7 +61,7 @@ export function compareDrift(baseSha, curSha, basePhash, curPhash) {
   return { verdict: "DRIFT", distance: dist, reason: `bytes differ; perceptual distance ${dist}/64` };
 }
 
-// Honest descriptive features measured from the pixels — advisory, for the model to DISCUSS what it
+// Honest descriptive features measured from the pixels -- advisory, for the model to DISCUSS what it
 // sees (contrast, coverage, structure/entropy, balance, dominant hue). Not a certificate; the
 // re-checkable claims are the identity SHA-256 and the perceptual hash above.
 export function features(px, w, h, ch = 4) {

@@ -1,9 +1,9 @@
-// showcase.js — orchestration for The Shared Frame.
+// showcase.js -- orchestration for The Shared Frame.
 //
 // A shared substrate two witnesses actuate together. The engine (engine.js) generates+judges+certifies
 // a frame CLIENT-SIDE from live parameters; the human moves those parameters (sliders), the model moves
 // them too (a real coordinate-descent refine step), and after every change a REAL coherence-membrane
-// certificate re-derives — re-checkable in the browser. You can talk to the model about the frame
+// certificate re-derives -- re-checkable in the browser. You can talk to the model about the frame
 // (dialogue.js): it answers only what the witnessed structure licenses, and narrates its own moves.
 import { renderFrame, renderReasoning, describe } from "./render.js";
 import { recheckCertificate } from "./verdict.js";
@@ -38,9 +38,9 @@ function showCertificate(cert) {
   liveCert = cert || null;
   $("recheck-out").hidden = true;
   if (!cert) { $("cert-claim").textContent = "this frame carries no certificate"; return; }
-  $("cert-claim").textContent = cert.claim || "—";
-  const v = $("cert-verdict"); v.textContent = cert.verdict || "—"; v.className = "tag " + (cert.verdict || "unverifiable");
-  $("cert-oracle").textContent = cert.oracle || "—";
+  $("cert-claim").textContent = cert.claim || "--";
+  const v = $("cert-verdict"); v.textContent = cert.verdict || "--"; v.className = "tag " + (cert.verdict || "unverifiable");
+  $("cert-oracle").textContent = cert.oracle || "--";
   $("cert-evidence").innerHTML = (cert.evidence || []).map(([k, val]) =>
     `<div class="ev"><span class="ek">${esc(k)}</span><span class="ev-v">${esc(val)}</span></div>`).join("");
 }
@@ -53,7 +53,7 @@ function recheckInto(outEl, cert) {
   outEl.hidden = false;
   outEl.innerHTML = `<div class="rc-line">re-derived in your browser: deviation <span class="rc-num">${r.deviation}</span> ${rel} `
     + `tolerance <span class="rc-num">${r.tolerance}</span> → <span class="tag ${r.verdict}">${r.verdict}</span></div>`
-    + `<div class="rc-match ${r.matches ? "ok" : "bad"}">${r.matches ? "✓ reproduces the certificate — you didn't have to trust it" : "✗ does not match"}</div>`;
+    + `<div class="rc-match ${r.matches ? "ok" : "bad"}">${r.matches ? "✓ reproduces the certificate -- you didn't have to trust it" : "✗ does not match"}</div>`;
   announce(`Re-checked: deviation ${r.deviation} ${rel} tolerance ${r.tolerance}, verdict ${r.verdict}, ${r.matches ? "reproduces" : "does not match"}.`);
 }
 
@@ -69,7 +69,7 @@ function showWorld(world) {
   $("badge").textContent = world.layers.map(l => l.organ_id + "·" + l.render_program.target.split("-")[0]).join("  +  ");
   renderReasoning({ params: $("params"), axes: $("axes"), trajectory: $("trajectory") }, world);
   showCertificate(world.certificate);
-  $("cert-mode").innerHTML = `live, from the frame you're both shaping — holding together at <b>${world.receipt.final_score.toFixed(4)}</b>`;
+  $("cert-mode").innerHTML = `live, from the frame you're both shaping -- holding together at <b>${world.receipt.final_score.toFixed(4)}</b>`;
   window.__world = world;
 }
 
@@ -131,7 +131,7 @@ function appendUser(text) {
 }
 
 // Render a model message: grounded text, evidence chips, and an inline re-derive of THIS message's
-// certificate snapshot — a claim turned into a check in one click.
+// certificate snapshot -- a claim turned into a check in one click.
 function say(payload, certSnapshot) {
   const log = $("chat-log");
   const el = document.createElement("div"); el.className = "msg model";
@@ -174,7 +174,7 @@ function paramsFrom(world) {
   const chips = $("chat-chips"); QUESTIONS.forEach(q => chips.appendChild(chip(q.q, () => askQuestion(q.id, q.q))));
   $("chat-send").addEventListener("click", sendFree);
   $("chat-input").addEventListener("keydown", e => { if (e.key === "Enter") sendFree(); });
-  initMedia();   // the "bring your own frame" arm — perceive + transform + discuss your own media
+  initMedia();   // the "bring your own frame" arm -- perceive + transform + discuss your own media
 
   try {
     for (const name of Object.keys(FIXTURES)) { const w = await loadFixture(name); palettes[name] = w.palette; startParams[name] = paramsFrom(w); }

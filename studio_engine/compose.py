@@ -1,8 +1,8 @@
 """Compositor: layer several organs into one witnessed World, judged by a composition criterion.
 
 The reconcile's compose() at the scene level. Layers share one palette (depth-ordered: fields
-behind, points in front) and are scored on three axes — palette harmony, depth complementarity
-(layers occupy different coverage bands so they don't fully occlude), and contrast balance —
+behind, points in front) and are scored on three axes -- palette harmony, depth complementarity
+(layers occupy different coverage bands so they don't fully occlude), and contrast balance --
 combined by cohesion. A composite is itself an (organ-graph, composition-criterion) binding.
 Stdlib + engine internals only.
 """
