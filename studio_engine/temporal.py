@@ -1,8 +1,8 @@
 """Witnessed motion: ground a field's animation instead of improvising it.
 
 A field's `t` is its loop time. Over one `period` we check two things and emit them as verdicts:
-  * continuity   — the loop has no pop at the seam (max frame-to-frame delta ~ the mean delta);
-  * on_criterion — the field stays legible across the loop (its dynamic range never collapses).
+  * continuity   -- the loop has no pop at the seam (max frame-to-frame delta ~ the mean delta);
+  * on_criterion -- the field stays legible across the loop (its dynamic range never collapses).
 The chamber animates u_time within [0, period); these verdicts say the motion is safe to play.
 Stdlib + strand only; no engine import (so the engine can import this).
 """
@@ -20,7 +20,7 @@ def _frames(e: ex.Expr, period: float, k: int, n: int) -> list:
 def continuity(e: ex.Expr, period: float, k: int = 16, n: int = 12) -> Verdict:
     """No popping: the wrap-around (seam) delta should be no larger than the interior deltas.
 
-    A discontinuous loop (wrong period) spikes at the seam — one delta far above the others; a
+    A discontinuous loop (wrong period) spikes at the seam -- one delta far above the others; a
     seamless loop's seam is just another smooth step. We score the seam against the largest
     interior step, so smooth periodic fields land at ~1.0 and a seam jump is penalized by its size.
     """

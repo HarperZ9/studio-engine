@@ -1,11 +1,11 @@
-// engine.js — the engine, in the browser. The shared substrate both witnesses can actuate.
+// engine.js -- the engine, in the browser. The shared substrate both witnesses can actuate.
 //
 // A faithful JS port of studio-engine's generate -> judge -> certify loop, for the three showcase
 // generators. The point: a human (param sliders) and the model (a real coordinate-descent refine
 // step) can BOTH change the same generated frame and watch a REAL coherence-membrane certificate
-// re-derive — not a mock. Faithfulness is gated by tests/engine.test.mjs: this code must reproduce
+// re-derive -- not a mock. Faithfulness is gated by tests/engine.test.mjs: this code must reproduce
 // each baked Python World's cohesion and per-axis margins at the same params. The verdict bar is
-// imported from verdict.js (single source — the engine invents no rule of its own).
+// imported from verdict.js (single source -- the engine invents no rule of its own).
 //
 // Ports: studio_engine.engine._features / _entropy / _refine, studio_engine.criteria, and the field
 // exprs / point recipe. Stdlib/browser only.
@@ -144,7 +144,7 @@ export function refineStep(gen, params, frac = 0.12) {
   return { params: best, cohesion: bestCoh, base, improved: bestCoh > base + 1e-6, moved };
 }
 
-// ---- certificate (coherence-membrane structural_fitness, via verdict.js — the single bar) ----
+// ---- certificate (coherence-membrane structural_fitness, via verdict.js -- the single bar) ----
 export function certify(coh, tolerance = DEFAULT_TOLERANCE) {
   const deviation = 1 - coh;
   return {
@@ -217,7 +217,7 @@ function titleFor(gen, params) {
   return `${pretty} · ${ps}`;
 }
 
-// Build a full, render-ready World from live params — same shape render.js + showcase.js consume for a
+// Build a full, render-ready World from live params -- same shape render.js + showcase.js consume for a
 // baked fixture, carrying a REAL certificate. This is the actuated substrate, witnessed.
 export function synthesize(gen, params, palette) {
   const g = GEN[gen], ev = evaluate(gen, params), coh = ev.cohesion;

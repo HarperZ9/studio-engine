@@ -20,7 +20,7 @@ def phyllotaxis(n: int = 600, angle_deg: float = GOLDEN_ANGLE, scale: float = 9.
 
 
 def recipe(params: dict, count: int = 700) -> dict:
-    """Spiral recipe reproducing phyllotaxis(count, angle, scale) — the point channel."""
+    """Spiral recipe reproducing phyllotaxis(count, angle, scale) -- the point channel."""
     return rc.spiral(angle_deg=params["angle"], scale=params["scale"], count=count)
 
 
@@ -41,7 +41,7 @@ def to_svg(pts, palette: list[str], size: int = 720, dot: float = 4.0,
 def golden_angle_deviation(angle_deg: float) -> float:
     """Fitness in 0..1: how close the spiral's divergence angle is to the golden angle.
 
-    The criterion the generator did NOT author — packing quality is a property of nature,
+    The criterion the generator did NOT author -- packing quality is a property of nature,
     not of the chosen angle. Circular distance, graded within 15 degrees.
     """
     d = abs(((angle_deg - GOLDEN_ANGLE + 180) % 360) - 180)

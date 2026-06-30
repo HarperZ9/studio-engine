@@ -5,9 +5,9 @@ engine evaluates (via the same parser) to reproduce the exact points it verified
 are carried as emitted-GLSL strings (parsed back with strand.glsl) so the recipe stays pure data
 yet re-evaluable. Three modes cover every shipped point generator:
 
-  spiral      — i -> (scale*sqrt(i)*cos(i*a), ...)            (phyllotaxis)
-  iterated    — (x,y) -> (update_x, update_y), drop transient (de Jong attractor)
-  parametric  — t in [0,t_max] -> (x(t), y(t))               (harmonograph)
+  spiral      -- i -> (scale*sqrt(i)*cos(i*a), ...)            (phyllotaxis)
+  iterated    -- (x,y) -> (update_x, update_y), drop transient (de Jong attractor)
+  parametric  -- t in [0,t_max] -> (x(t), y(t))               (harmonograph)
 """
 from __future__ import annotations
 
@@ -36,7 +36,7 @@ def parametric(x_expr: Expr, y_expr: Expr, t_max: float, count: int,
 
 
 def eval_recipe(r: dict) -> list:
-    """Reproduce (x, y, i) points from a recipe — the engine-side render of the point channel."""
+    """Reproduce (x, y, i) points from a recipe -- the engine-side render of the point channel."""
     mode = r["mode"]
     if mode == "spiral":
         return _eval_spiral(r)

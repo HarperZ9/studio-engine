@@ -1,4 +1,4 @@
-"""The contract — the data model the engine emits and the frontend renders.
+"""The contract -- the data model the engine emits and the frontend renders.
 
 This is the keystone of the whole package: every API response and the frontend
 "experience chamber" are typed against these shapes. Stdlib only (dataclasses + json).
@@ -47,7 +47,7 @@ class Artifact:
 
 @dataclass
 class Verdict:
-    """A criterion's judgement on an artifact — the verification half of the loop."""
+    """A criterion's judgement on an artifact -- the verification half of the loop."""
     criterion: str
     tag: VerdictTag
     score: float            # 0..1, higher = better fit to the criterion
@@ -69,7 +69,7 @@ class Step:
 
 @dataclass
 class Trajectory:
-    """The witnessed path from first attempt to accepted result — the reasoning, replayable."""
+    """The witnessed path from first attempt to accepted result -- the reasoning, replayable."""
     steps: list[Step] = field(default_factory=list)
     accepted_index: int = -1
     converged: bool = False

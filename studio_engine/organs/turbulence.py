@@ -44,7 +44,7 @@ def expr(params: dict) -> ex.Expr:
 
 
 def value(params: dict, u: float, v: float) -> float:
-    """Fractal turbulence at (u, v), u, v in [-1, 1] — the expr sampled at t=0 (~[-1, 1])."""
+    """Fractal turbulence at (u, v), u, v in [-1, 1] -- the expr sampled at t=0 (~[-1, 1])."""
     return ex.eval_expr(expr(params), {"u": u, "v": v, "t": 0.0})
 
 

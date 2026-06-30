@@ -1,4 +1,4 @@
-"""Moire field — two rotated sinusoidal gratings multiplied. Strand-native. Stdlib + strand only.
+"""Moire field -- two rotated sinusoidal gratings multiplied. Strand-native. Stdlib + strand only.
 
 expr: sin(f*(u) + t) * sin(f*(u*cos(a) + v*sin(a)) + t). The angle between the gratings sets the
 moire beat; t slides the fringes (animatable). Another one-expr generator on the substrate.

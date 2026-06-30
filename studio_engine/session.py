@@ -1,8 +1,8 @@
-"""Interactive sessions — the two-way, real-time cross-examination of the loop.
+"""Interactive sessions -- the two-way, real-time cross-examination of the loop.
 
 A Session holds live state (the parameter vector + corpus) and lets a human or a model
 *steer* the refinement: take an auto step, inject parameters, or ask why an axis scores
-what it does. This is the loop turned bidirectional — the operator and the engine examine
+what it does. This is the loop turned bidirectional -- the operator and the engine examine
 the same candidate together, in real time. Stdlib only; reuses the engine's helpers.
 """
 from __future__ import annotations
@@ -17,9 +17,9 @@ from .corpus import Corpus
 from .native_render import RenderParams, native_render
 
 _WHY = {
-    "novelty": "distance from the corpus — vary the parameters or palette to differ from prior work",
-    "objective": "a structural property — the parameter must approach the criterion it did not author",
-    "subjective": "a measured feature of the output — adjust the parameters to shape it",
+    "novelty": "distance from the corpus -- vary the parameters or palette to differ from prior work",
+    "objective": "a structural property -- the parameter must approach the criterion it did not author",
+    "subjective": "a measured feature of the output -- adjust the parameters to shape it",
 }
 
 
@@ -124,7 +124,7 @@ class Session:
                 "why": _WHY.get(k, ""), "all_margins": {a: round(v, 4) for a, v in margins.items()}}
 
     def program(self):
-        """The current candidate's live RenderProgram — render the steered candidate as you examine it."""
+        """The current candidate's live RenderProgram -- render the steered candidate as you examine it."""
         spec = self.spec
         if spec["field"] is not None:
             return prog.field_program(self.generator, spec["expr"](self.params), self.palette,

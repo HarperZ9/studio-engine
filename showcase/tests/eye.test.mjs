@@ -1,5 +1,5 @@
 // The eye's faithfulness gate. The browser perceptual hash must be BIT-IDENTICAL to coherence-membrane's
-// phash.py for the same pixels — otherwise "I perceive this image, here's the hash, re-check it" is a lie.
+// phash.py for the same pixels -- otherwise "I perceive this image, here's the hash, re-check it" is a lie.
 // The reference hexes below were computed by the Python eye (perceptual_hash_raw) on these exact buffers.
 //
 // Run: node --test showcase/tests/eye.test.mjs
@@ -26,7 +26,7 @@ test("grayscale dHash reproduces the Python eye bit-for-bit", () => {
   assert.equal(perceptualHash(px, W, H, 1), "0000010101030306");
 });
 
-test("RGBA ignores alpha — same luma, same hash as RGB", () => {
+test("RGBA ignores alpha -- same luma, same hash as RGB", () => {
   const W = 32, H = 24, rgb = new Uint8Array(W * H * 3), rgba = new Uint8Array(W * H * 4);
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const r = (x * 8 + y * 3) % 256, g = (x * x + y * 7) % 256, b = (x * 5 + y * y) % 256;

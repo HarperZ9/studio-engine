@@ -1,4 +1,4 @@
-"""Concentric interference rings field — a strand-native generator. Stdlib + strand only.
+"""Concentric interference rings field -- a strand-native generator. Stdlib + strand only.
 
 Adding a generator to the substrate is now just writing one expr: sin(sqrt(u^2+v^2)*freq + t).
 The radius term makes circular contours; t pulses them outward (animatable).

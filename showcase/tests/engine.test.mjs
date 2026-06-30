@@ -1,7 +1,7 @@
 // The faithfulness gate. The browser engine must reproduce the Python engine: re-evaluating each
 // baked World at its OWN witnessed params must yield the same cohesion and the same per-axis margins
 // (within float tolerance). If this passes, the live certificate the page issues after a human or the
-// model actuates the substrate is REAL — the same verdict studio-engine would have reached.
+// model actuates the substrate is REAL -- the same verdict studio-engine would have reached.
 //
 // Run: node --test showcase/tests/engine.test.mjs
 import { test } from "node:test";
@@ -25,12 +25,12 @@ function bakedParams(world) {
 }
 
 test("JS engine reproduces each baked World's cohesion and margins at its own params", () => {
-  // Cohesion is the certificate-determining quantity — the real faithfulness claim — asserted strict.
+  // Cohesion is the certificate-determining quantity -- the real faithfulness claim -- asserted strict.
   // The engine stores params AND margins rounded to 4 decimals (engine.py:190,224). Smooth field axes
   // reproduce to rounding; phyllotaxis's point-binning entropy is DISCONTINUOUS in the angle, so it
   // can't be reproduced exactly from rounded params (a bounded ~3e-4 drift). Field axes: strict (1e-4).
   // Point axes: within the documented binning/rounding bound (1e-3). A truly wrong port would blow past
-  // both — cohesion would diverge far more than 1e-4 and the smooth field axes would not match at all.
+  // both -- cohesion would diverge far more than 1e-4 and the smooth field axes would not match at all.
   for (const gen of CASES) {
     const world = JSON.parse(readFileSync(join(worldsDir, gen + ".json"), "utf8"));
     const params = bakedParams(world);
@@ -62,7 +62,7 @@ test("a synthesized live World carries a certificate that re-checks true", () =>
 });
 
 test("the model's refine step only ever improves cohesion (monotone), and can converge", () => {
-  // gyroid pushed off a clean frequency: clean_freq drops, cohesion drops — the model should recover it.
+  // gyroid pushed off a clean frequency: clean_freq drops, cohesion drops -- the model should recover it.
   let params = { freq: 6.4, z: 0.5 };
   let coh = evaluate("gyroid", params).cohesion;
   let moves = 0;
@@ -81,5 +81,5 @@ test("tampering the real substrate can drive a genuine refutation", () => {
   const ev = evaluate("gyroid", { freq: 6.5, z: 0.5 });
   assert.ok(ev.margins.clean_freq < 0.05, "freq 6.5 is maximally far from an integer -> clean_freq ~0");
   const cert = certify(ev.cohesion);
-  assert.equal(recheckCertificate(cert).matches, true, "the refutation re-checks true too — the bar is mechanical");
+  assert.equal(recheckCertificate(cert).matches, true, "the refutation re-checks true too -- the bar is mechanical");
 });

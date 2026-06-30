@@ -75,7 +75,7 @@ class TestFieldExprs(unittest.TestCase):
 
     def test_engine_field_is_verified_math(self):
         # Non-circular: the engine's feature-field (the values its criteria judge) equals the
-        # independent reference at the static slice — NOT eval(expr) compared against eval(expr).
+        # independent reference at the static slice -- NOT eval(expr) compared against eval(expr).
         gens = engine._gens()
         for name in FIELDS:
             spec = gens[name]

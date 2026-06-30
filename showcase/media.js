@@ -1,10 +1,10 @@
-// media.js — Bring Your Own Frame. The shared surface over YOUR subject matter.
+// media.js -- Bring Your Own Frame. The shared surface over YOUR subject matter.
 //
 // You plug in a photograph, a gif, or a video. The browser decodes it onto a canvas; the eye (eye.js)
-// perceives those real pixels — identity SHA-256 + a faithful perceptual hash + measured features — and
+// perceives those real pixels -- identity SHA-256 + a faithful perceptual hash + measured features -- and
 // witnesses it. Then BOTH of you actuate it: you apply a transform, the model takes its own turn, and
 // every change is re-perceived and witnessed with a drift distance. You discuss it together, and the
-// model speaks only what it measured — re-derivable in your browser. Self-contained: owns its section.
+// model speaks only what it measured -- re-derivable in your browser. Self-contained: owns its section.
 import { perceptualHash, hamming, features, identitySha256 } from "./eye.js";
 
 const $ = id => document.getElementById(id);
@@ -56,7 +56,7 @@ function fmt(v, n = 3) { return typeof v === "number" ? (Number.isInteger(v) ? S
 
 function renderObservation(obs, drift) {
   $("media-cert").hidden = false;
-  $("mc-identity").textContent = obs.identity ? obs.identity.slice(0, 16) + "…" : "—";
+  $("mc-identity").textContent = obs.identity ? obs.identity.slice(0, 16) + "…" : "--";
   $("mc-dims").textContent = `${obs.width}×${obs.height}`;
   $("mc-phash").textContent = obs.phash;
   const f = obs.features;
@@ -81,7 +81,7 @@ function bubble(role, text, grounds, rederive) {
     const rc = el.querySelector(".rc-inline"); rc.hidden = false;
     const ok = again === rederive.phash;
     rc.innerHTML = `<div class="rc-line">re-read the canvas pixels → hash <span class="rc-num">${again}</span></div>`
-      + `<div class="rc-match ${ok ? "ok" : "bad"}">${ok ? "✓ reproduces the witnessed perception — you didn't have to trust it" : "✗ differs from the witnessed hash"}</div>`;
+      + `<div class="rc-match ${ok ? "ok" : "bad"}">${ok ? "✓ reproduces the witnessed perception -- you didn't have to trust it" : "✗ differs from the witnessed hash"}</div>`;
     log.scrollTop = log.scrollHeight;
   });
   if (role === "model" && !reduced()) { let i = 0; (function t() { body.textContent = text.slice(0, i); log.scrollTop = log.scrollHeight; if (i++ < text.length) setTimeout(t, 7); })(); }
@@ -101,14 +101,14 @@ function describeText(obs) {
 }
 
 function mediaAnswer(id) {
-  if (!lastObs) return { text: "Plug in a photo, gif, or video first — then I can tell you what I actually see.", grounds: [] };
+  if (!lastObs) return { text: "Plug in a photo, gif, or video first -- then I can tell you what I actually see.", grounds: [] };
   const f = lastObs.features, g = k => ({ k, v: fmt(f[k]) });
   if (id === "see" || id === "describe") return { text: describeText(lastObs), grounds: [{ k: "phash", v: lastObs.phash }, g("contrast"), g("entropy")], rederive: lastObs };
   if (id === "structure") return { text: `Its structure reads as entropy ${fmt(f.entropy)} (${f.entropy > 0.8 ? "rich detail" : f.entropy < 0.45 ? "large flat regions" : "middling texture"}) and balance ${fmt(f.balance)} `
     + `(${f.balance > 0.85 ? "mass sits near the centre" : "the mass leans to one side"}). If we wanted to play with that, edges would pull the detail forward and threshold would simplify it.`, grounds: [g("entropy"), g("balance"), g("coverage")] };
   if (id === "next") return { text: `A few directions we could take it: find its edges to pull the lines forward, threshold it down to where the real mass sits, `
-    + `or invert it and look at the negative. Run one and I'll tell you how far it moved the frame — or I'll take a turn and pick one myself.`, grounds: [{ k: "try", v: "edges · threshold · invert" }] };
-  return { text: `I can tell you what I see in your frame — its size, its colour, how it's laid out, how much detail it carries. `
+    + `or invert it and look at the negative. Run one and I'll tell you how far it moved the frame -- or I'll take a turn and pick one myself.`, grounds: [{ k: "try", v: "edges · threshold · invert" }] };
+  return { text: `I can tell you what I see in your frame -- its size, its colour, how it's laid out, how much detail it carries. `
     + `Ask me what I see, its structure, or what we could try next.`, grounds: [] };
 }
 
@@ -117,7 +117,7 @@ function modelChoice(f) {
   if (f.entropy < 0.5) return { key: "edges", why: "the frame reads flat to me, so I'll run edge detection to expose whatever structure is hiding in it" };
   if (f.contrast > 0.7) return { key: "posterize", why: "it's very high-contrast, so I'll posterize it to see how much of that is a few dominant tones" };
   if (f.coverage > 0.6) return { key: "threshold", why: "it's mostly bright, so I'll threshold it to find where the real mass sits" };
-  return { key: "invert", why: "I'll invert it — sometimes the negative makes the structure I'm reading easier to see" };
+  return { key: "invert", why: "I'll invert it -- sometimes the negative makes the structure I'm reading easier to see" };
 }
 
 // Apply a transform (by you or the model), re-perceive, witness the drift, and let the model react.
@@ -137,14 +137,14 @@ function actuate(key, who) {
   renderObservation(lastObs, { verdict: stepDist === 0 ? "MATCH" : "DRIFT", distance: stepDist });
   bubble(who, `${who === "you" ? "I" : "the model"} applied ${TRANSFORMS[key].label}.`, null, null);
   const verb = stepDist === 0 ? "barely moved how I see it" : `moved how I see it by ${stepDist}/64`;
-  bubble("model", `${who === "you" ? "You" : "I"} ran ${TRANSFORMS[key].label} — that ${verb}. `
+  bubble("model", `${who === "you" ? "You" : "I"} ran ${TRANSFORMS[key].label} -- that ${verb}. `
     + `${stepDist > 20 ? "Big shift; the whole structure changed." : stepDist === 0 ? "Looks about the same to me." : "A gentle change."} `
     + `Want to take it further, or shall I take a turn?`,
     [{ k: "Δ", v: `${stepDist}/64` }, { k: "phash", v: lastObs.phash }], lastObs);
   setTurn(who === "you" ? "model" : "you");
 }
 
-function setTurn(next) { turn = next; const el = $("media-turn"); if (el) el.innerHTML = next === "you" ? "your turn — apply a transform" : `the model's turn — <button type="button" id="model-turn" class="chip">let it take its turn ▶</button>`;
+function setTurn(next) { turn = next; const el = $("media-turn"); if (el) el.innerHTML = next === "you" ? "your turn -- apply a transform" : `the model's turn -- <button type="button" id="model-turn" class="chip">let it take its turn ▶</button>`;
   if (next === "model") $("model-turn").addEventListener("click", () => { const c = modelChoice(lastObs.features); bubble("model", `My turn. ${c.why}.`, null, null); actuate(c.key, "model"); }); }
 
 async function loadFile(file) {
@@ -155,14 +155,14 @@ async function loadFile(file) {
   if (file.type.startsWith("video")) { setupVideo(url); return; }
   const img = new Image();
   img.onload = () => { drawSource(img, img.naturalWidth, img.naturalHeight); firstPerceive(`I perceive your image.`); URL.revokeObjectURL(url); };
-  img.onerror = () => bubble("model", "I couldn't decode that file — try a png, jpg, gif, or webp.", null, null);
+  img.onerror = () => bubble("model", "I couldn't decode that file -- try a png, jpg, gif, or webp.", null, null);
   img.src = url;
 }
 
 function setupVideo(url) {
   videoEl = $("media-video"); videoEl.hidden = false; videoEl.src = url;
   $("media-canvas").hidden = true;
-  videoEl.addEventListener("loadeddata", () => bubble("model", "Video loaded. Play it, then press “perceive this frame” and I'll tell you what I see — do it as it plays and we can watch it change together.", null, null), { once: true });
+  videoEl.addEventListener("loadeddata", () => bubble("model", "Video loaded. Play it, then press “perceive this frame” and I'll tell you what I see -- do it as it plays and we can watch it change together.", null, null), { once: true });
 }
 
 function sampleVideoFrame() {
@@ -172,7 +172,7 @@ function sampleVideoFrame() {
   if (!baselineHash) firstPerceive(`I perceived this frame.`);
   else { lastObs = perceive(); const dist = hamming(prevHash || baselineHash, lastObs.phash); prevHash = lastObs.phash;
     renderObservation(lastObs, { verdict: dist === 0 ? "MATCH" : "DRIFT", distance: dist });
-    bubble("model", `This frame: ${lastObs.phash} — ${dist}/64 bits from the last one I saw. ${dist > 15 ? "The scene moved." : "Nearly the same frame."}`, [{ k: "Δ", v: `${dist}/64` }, { k: "phash", v: lastObs.phash }], lastObs); }
+    bubble("model", `This frame: ${lastObs.phash} -- ${dist}/64 bits from the last one I saw. ${dist > 15 ? "The scene moved." : "Nearly the same frame."}`, [{ k: "Δ", v: `${dist}/64` }, { k: "phash", v: lastObs.phash }], lastObs); }
 }
 
 function drawSource(src, sw, sh) {
@@ -186,7 +186,7 @@ function drawSource(src, sw, sh) {
 function firstPerceive(intro) {
   lastObs = perceive(); baselineHash = lastObs.phash; prevHash = lastObs.phash;
   renderObservation(lastObs, null);
-  bubble("model", `${intro} ${describeText(lastObs)} Let's play with it — change it however you like, and I'll take turns with you.`, [{ k: "phash", v: lastObs.phash }, { k: "size", v: `${w}×${h}` }], lastObs);
+  bubble("model", `${intro} ${describeText(lastObs)} Let's play with it -- change it however you like, and I'll take turns with you.`, [{ k: "phash", v: lastObs.phash }, { k: "size", v: `${w}×${h}` }], lastObs);
   setTurn("you");
 }
 

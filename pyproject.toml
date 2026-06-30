@@ -19,6 +19,11 @@ classifiers = [
 ]
 dependencies = []
 
+[project.urls]
+Homepage = "https://github.com/HarperZ9/studio-engine"
+Repository = "https://github.com/HarperZ9/studio-engine"
+Issues = "https://github.com/HarperZ9/studio-engine/issues"
+
 [project.scripts]
 studio-engine = "studio_engine.server:serve"
 

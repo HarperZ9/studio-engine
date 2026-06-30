@@ -1,7 +1,7 @@
 """Web-Audio backend for the ear: turn the sonify recipe into a portable synth graph.
 
 The baked WAV (organs.sonify) is an additive-sine sweep with phase integration, so it is NOT a
-single closed-form expr — the audio channel is a *synth-graph spec*, not the strand AST. This
+single closed-form expr -- the audio channel is a *synth-graph spec*, not the strand AST. This
 emitter maps the SAME sonify params that bake the WAV into oscillator nodes + a frequency
 automation curve a Web-Audio frontend instantiates. Grounded by shared source: the graph's
 partials/curve come from the very dict that renders the WAV (tests assert they agree).
@@ -15,7 +15,7 @@ def emit_webaudio(audio_params: dict) -> dict:
     """sonify params -> {oscillators, base_freq, pitch_curve, envelope, schema}.
 
     `audio_params` is organs.sonify.audio_params(...).content, JSON-parsed. Raises ValueError on
-    non-additive input (no partials) — the channel is defined as additive form (spec §13).
+    non-additive input (no partials) -- the channel is defined as additive form (spec §13).
     """
     partials = audio_params.get("partials")
     if not partials:

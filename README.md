@@ -13,7 +13,8 @@ python -m studio_engine 7 gyroid
 python -m studio_engine.server 8777
 ```
 
-Then open `handoff/reference-chamber.html` in a browser.
+Then open `handoff/reference-chamber.html` in a browser. For the full local
+workflow, see [USAGE.md](USAGE.md).
 
 ## Why it matters
 
@@ -34,8 +35,8 @@ AI creative output is weak when the artifact has no structure a person or later 
 ## Technical framing
 
 > A native, **zero-dependency** creative-verification engine. It composes generative + verification
-> organs into one witnessed loop and emits **Worlds** — self-describing render programs (GLSL for the
-> eye, a synth graph for the ear), a witnessed motion timeline, and the reasoning trajectory — for an
+> organs into one witnessed loop and emits **Worlds** -- self-describing render programs (GLSL for the
+> eye, a synth graph for the ear), a witnessed motion timeline, and the reasoning trajectory -- for an
 > **experience-chamber** frontend to render.
 
 ![python](https://img.shields.io/badge/python-3.10%2B-blue.svg)
@@ -46,11 +47,11 @@ AI creative output is weak when the artifact has no structure a person or later 
 Every World is a *witnessed creative act*: **perceive → generate → critique → refine → witness**.
 The engine generates art, judges it against a criterion it did **not** author, refines toward
 "correct," and records the whole replayable path with a re-checkable receipt. Grounded creativity
-and verification as one loop — the accountability spine, turned toward making things.
+and verification as one loop -- the accountability spine, turned toward making things.
 
 ## The strand substrate (what's new in 0.2.0)
 
-One closed-form **expression algebra** (`strand`) is the single source every backend derives from —
+One closed-form **expression algebra** (`strand`) is the single source every backend derives from --
 so the chamber renders *the exact math the engine verified*, not a re-implementation:
 
 - **eye** → the engine emits each field as a **WebGL fragment shader** (`render_program.source`); the
@@ -70,21 +71,21 @@ python -m studio_engine 7 gyroid           # run the loop, write studio-out/worl
 python -m studio_engine.server 8777        # serve the API at http://127.0.0.1:8777 (CORS *)
 ```
 
-Then open `handoff/reference-chamber.html` in a browser — a runnable, **accessible** reference chamber
+Then open `handoff/reference-chamber.html` in a browser -- a runnable, **accessible** reference chamber
 that compiles the shipped GLSL live, runs point recipes, stacks composites, and plays the synth graph.
 
 ## What's in the box
 
 ```
 studio_engine/            the engine (zero-dep, stdlib only)
-  strand/                 the substrate — one expression algebra, many backends
+  strand/                 the substrate -- one expression algebra, many backends
     expr.py               the frozen AST: eval, hash, sampling
     glsl.py               emit a GLSL fragment + parse it back (the grounding proof)
     recipe.py             point-cloud recipes (spiral / iterated / parametric)
     webaudio.py           the synth-graph backend
   model.py                the contract: World / Layer / RenderProgram / AudioProgram / Timeline
   engine.py               the loop + the 10-generator registry
-  compose.py              the compositor — layered Worlds + a composition criterion
+  compose.py              the compositor -- layered Worlds + a composition criterion
   temporal.py             the witnessed motion timeline (continuity + on-criterion)
   criteria.py             composable criteria + cohesion (harmonic mean)
   corpus.py               persistent novelty grounding
@@ -95,7 +96,7 @@ studio_engine/            the engine (zero-dep, stdlib only)
   session.py              interactive cross-examine (steer the live render program)
   server.py               the HTTP API (http.server)
 handoff/                  >>> the frontend package <<<
-  INTEGRATION.md          read this first — how to build the chamber
+  INTEGRATION.md          read this first -- how to build the chamber
   types.ts · openapi.json · ENDPOINTS.md · examples/ · reference-chamber.html
 ```
 
@@ -113,15 +114,15 @@ Each is `(expr, criterion)`. Field generators emit a GLSL fragment; point genera
 
 ## Determinism + receipts
 
-`(seed, generator, scheme)` fully determines a World — same input, same `id` and `sha256`s (for a fixed
+`(seed, generator, scheme)` fully determines a World -- same input, same `id` and `sha256`s (for a fixed
 corpus). The receipt makes every experience reproducible and re-checkable. That honesty is the point.
 
 ## Honest scope
 
-This is the **generation + verification** engine that *feeds* an experience chamber — real render
+This is the **generation + verification** engine that *feeds* an experience chamber -- real render
 programs, real audio params, real witnessed reasoning. The chamber (the immersive room) is the
 frontend's realization, built from `handoff/`. The engine emits a shader *as data* and verifies it on
-CPU; the dependency-free **native GPU renderer** (no DirectX/driver) is `raw`'s separate telos — not
+CPU; the dependency-free **native GPU renderer** (no DirectX/driver) is `raw`'s separate telos -- not
 this package, named as the horizon this engine is built to later sit on.
 
 ## License
@@ -130,13 +131,18 @@ AGPL-3.0-or-later, dual-license-ready (the author retains copyright; commercial 
 Matures the shipped sensory-algebra organs (contour/SVG, OKLab, render-critic, reconcile/refine) into
 a composable, witnessed substrate.
 
-**Zain Dana Harper** — small tools with explicit edges. Built with Claude Code; reviewed, tested, owned.
+**Zain Dana Harper** -- small tools with explicit edges. Built with Claude Code; reviewed, tested, owned.
 
 ## For developers
 
 Keep the public README, package metadata, and examples aligned with current behavior. Before opening a PR or pushing a release, run the local package verification path.
 
 ```bash
-python -m pip install -e ".[test]"
-python -m pytest
+python -m pip install -e .
+python -m unittest discover -s tests
+node --test showcase/tests/*.test.mjs
+python test_forward_delivery_contract.py
 ```
+
+See [AGENTS.md](AGENTS.md) for the repo-specific operating boundary and
+[CHANGELOG.md](CHANGELOG.md) for current delivery status.

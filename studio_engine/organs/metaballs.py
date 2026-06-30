@@ -79,7 +79,7 @@ def expr(params: dict) -> ex.Expr:
 
 
 def value(params: dict, u: float, v: float) -> float:
-    """Summed metaball potential at (u, v) — the expr sampled (t unused). >= 0, may exceed 1."""
+    """Summed metaball potential at (u, v) -- the expr sampled (t unused). >= 0, may exceed 1."""
     return ex.eval_expr(expr(params), {"u": u, "v": v, "t": 0.0})
 
 
