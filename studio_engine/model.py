@@ -130,7 +130,8 @@ class RenderProgram:
     value_range: list[float] = field(default_factory=list)
     color: dict[str, Any] = field(default_factory=dict)
     expr_sha256: str = ""
-    notes: str = ""
+    expr_ast: dict[str, Any] | None = None   # JSON-safe strand Expr; lets a headless renderer
+    notes: str = ""                          # reconstruct+re-hash the EXACT tree (assoc-preserving)
 
 
 @dataclass
