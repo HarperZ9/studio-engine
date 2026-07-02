@@ -92,6 +92,87 @@ class TestPointRasterization(unittest.TestCase):
         self.assertEqual(f1, f2)
 
 
+class TestPointTamperDetection(unittest.TestCase):
+    """The can-it-FAIL negative for the point path: a tampered recipe (whose hash no longer
+    matches expr_sha256) is refused BEFORE any pixel -- symmetric with the field path."""
+
+    def test_tampered_recipe_is_rejected(self):
+        """Mutating a recipe field (e.g. count) so its hash != expr_sha256 fails before rasterizing."""
+        world = _phyllotaxis_world()
+        prog = world.layers[0].render_program
+        self.assertEqual(prog.target, "point-recipe")
+        # Corrupt the recipe while leaving the receipted expr_sha256 intact.
+        prog.recipe["count"] = int(prog.recipe.get("count", 0)) + 1
+        r = RasterRenderer()
+        with self.assertRaises(FrameError) as ctx:
+            r.render_points(prog, 128, 128, world.palette)
+        self.assertIn("expr_sha256 mismatch", str(ctx.exception))
+
+    def test_tampered_recipe_sha_is_rejected(self):
+        """Corrupting the claimed expr_sha256 (recipe intact) is also caught."""
+        world = _phyllotaxis_world()
+        prog = world.layers[0].render_program
+        prog.expr_sha256 = "0000000000000000"
+        r = RasterRenderer()
+        with self.assertRaises(FrameError) as ctx:
+            r.render_points(prog, 128, 128, world.palette)
+        self.assertIn("expr_sha256 mismatch", str(ctx.exception))
+
+    def test_verified_point_program_renders(self):
+        """The untampered point program passes verification and produces pixels."""
+        world = _phyllotaxis_world()
+        prog = world.layers[0].render_program
+        png = RasterRenderer().render_points(prog, 64, 64, world.palette)
+        self.assertTrue(png.startswith(b"\x89PNG"))
+
+
+class TestFieldOrientation(unittest.TestCase):
+    """The PNG's row order must match WebGL's gl_FragCoord.y origin (bottom-left): the TOP row of
+    the emitted PNG must sample v=+1, so the headless frame matches what the browser shader draws."""
+
+    def test_top_row_maps_to_v_plus_one(self):
+        """A vertical-gradient field ( field==v ) must be brightest at the TOP of the PNG.
+
+        In WebGL, gl_FragCoord.y increases upward, so v=+1 is the top of the viewport. If the
+        renderer wrote v=-1 at the top (a vertical flip), the gradient would be inverted relative
+        to the browser. We build a program whose field is exactly `v`, render it, and assert the
+        top scanline is brighter than the bottom scanline.
+        """
+        from studio_engine.model import RenderProgram
+        from studio_engine.organs import program as prog_mod
+        from studio_engine.strand import expr as ex
+
+        e = ex.var("v")
+        rp = prog_mod.field_program("vgrad", e, ["#000000", "#ffffff"], 0.0,
+                                    animatable=False, period=0.0)
+        self.assertEqual(rp.target, "glsl-fragment")
+        self.assertIsInstance(rp, RenderProgram)
+        png = RasterRenderer().render_field(rp, 8, 8, t=0.0)
+        top, bottom = _row_luma(png, 8, 8, 0), _row_luma(png, 8, 8, 7)
+        # v=+1 (bright) at the top row, v=-1 (dark) at the bottom row.
+        self.assertGreater(top, bottom)
+
+
+def _row_luma(png: bytes, w: int, h: int, row: int) -> int:
+    """Decode a bare no-filter RGB PNG and return the summed luma of one scanline."""
+    import zlib
+    # IDAT is the chunk after IHDR; parse chunks to find it.
+    i = 8
+    idat = b""
+    while i < len(png):
+        length = int.from_bytes(png[i:i + 4], "big")
+        tag = png[i + 4:i + 8]
+        data = png[i + 8:i + 8 + length]
+        if tag == b"IDAT":
+            idat += data
+        i += 12 + length
+    raw = zlib.decompress(idat)
+    stride = w * 3 + 1  # +1 filter byte per scanline
+    start = row * stride + 1  # skip the filter byte
+    scan = raw[start:start + w * 3]
+    return sum(scan)
+
+
 class TestTamperDetection(unittest.TestCase):
     """The can-it-FAIL negative test: the renderer validates the shipped program against the
     receipt BEFORE producing pixels, so a tampered AST/shader/hash is rejected, not rendered."""

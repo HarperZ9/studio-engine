@@ -5,19 +5,24 @@ for some other host to draw, this closes the loop headlessly: it consumes the EX
 RenderProgram and produces a deterministic PNG frame -- so the merit artifact (the picture) and the
 accountability artifact (a re-checkable frame hash tied to expr_sha256) are one thing.
 
-Honest by construction. Before a single pixel, `render_field` reparses the shipped GLSL `field()`
-body back to a strand Expr, re-hashes it, and refuses (FrameError) if that hash no longer matches
-the program's expr_sha256. So a tampered shader -- or a tampered receipt -- is caught, not rendered.
-The Python sampling mirrors the shader's own math: `field(u,v,t)` over the same u,v in [-1,1] grid,
-normalized by value_range, mapped through the SAME piecewise-linear palette ramp the GLSL emits.
+Honest by construction, on BOTH paths, before a single pixel. `render_field` reconstructs the
+strand Expr from the shipped expr_ast, re-hashes it, and refuses (FrameError) if that hash no
+longer matches the program's expr_sha256 (plus a GLSL-source eval cross-check); `render_points`
+re-hashes the shipped recipe the same way point_program bound it and refuses on mismatch. So a
+tampered shader, recipe, or receipt is caught, not rendered. The Python sampling mirrors the
+shader's own math: `field(u,v,t)` over the same u,v in [-1,1] grid, normalized by value_range,
+mapped through the SAME piecewise-linear palette ramp the GLSL emits. Row order matches WebGL's
+bottom-left fragment origin: the top PNG scanline samples v=+1, so the headless frame is not
+flipped relative to what the browser shader would draw.
 """
 from __future__ import annotations
 
 import base64
 import hashlib
+import json
 import re
 
-from .model import RenderProgram
+from .model import RenderProgram, _sha
 from .organs.raster import write_png, _parse_hex
 from .strand import expr as ex
 from .strand import glsl
@@ -105,8 +110,10 @@ class RasterRenderer:
         fb = bytearray(w * h * 3)
         o = 0
         for py in range(h):
-            # gl_FragCoord.xy / u_resolution * 2 - 1, sampled at pixel centers.
-            v = ((py + 0.5) / h) * 2.0 - 1.0
+            # Mirror gl_FragCoord.xy / u_resolution * 2 - 1 at pixel centers. WebGL's fragment
+            # origin is bottom-left (gl_FragCoord.y grows upward), but write_png emits scanlines
+            # top-to-bottom, so the TOP PNG row (py=0) must sample v=+1 to match the browser.
+            v = (1.0 - (py + 0.5) / h) * 2.0 - 1.0
             env = {"v": v, "t": t}
             for px in range(w):
                 u = ((px + 0.5) / w) * 2.0 - 1.0
@@ -120,6 +127,21 @@ class RasterRenderer:
                 o += 3
         return write_png(w, h, bytes(fb))
 
+    @staticmethod
+    def _verify_recipe(program: RenderProgram) -> None:
+        """Re-hash the shipped recipe and check it against the receipt BEFORE any pixel.
+
+        Mirrors how organs/program.point_program binds the receipt (_sha over the sort-keyed JSON
+        of the recipe), so a tampered recipe -- a mutated angle_deg/count/scale or an injected
+        update_x/y GLSL string -- or a tampered claimed hash is caught, not rendered. Symmetric
+        with render_field's expr_ast tamper check on the field path.
+        """
+        got = _sha(json.dumps(program.recipe, sort_keys=True))
+        if got != program.expr_sha256:
+            raise FrameError(
+                f"expr_sha256 mismatch: shipped recipe hashes to {got!r} "
+                f"but program claims {program.expr_sha256!r} (tampered program or receipt)")
+
     def render_points(self, program: RenderProgram, width: int, height: int,
                       palette: list[str], bg: tuple[int, int, int] = (14, 17, 22)) -> bytes:
         """Render a point-recipe program to a `width`x`height` RGB PNG.
@@ -130,6 +152,7 @@ class RasterRenderer:
         """
         if program.target != "point-recipe":
             raise FrameError(f"render_points needs a point-recipe program, got {program.target!r}")
+        self._verify_recipe(program)
         w = max(1, int(width))
         h = max(1, int(height))
         try:
