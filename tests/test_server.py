@@ -107,6 +107,16 @@ class TestServer(unittest.TestCase):
         self.assertIsNone(r["certificate"])
         self.assertIn("not built", r["reason"])
 
+    def test_inject_malformed_value_returns_clean_400(self):
+        # A non-numeric override value must yield a clean 400 (like the sibling
+        # /simulate, /compose, /session handlers), not an unhandled 500 /
+        # connection-reset from float() raising inside Session.inject().
+        _, sbody = self._post("/session", {"seed": 7, "generator": "gyroid"})
+        sid = json.loads(sbody)["session_id"]
+        st, body = self._post(f"/session/{sid}/inject", {"params": {"freq": "not-a-number"}})
+        self.assertEqual(st, 400)
+        self.assertIn("error", json.loads(body))
+
     def test_session_render_endpoint_records_step(self):
         old = os.environ.pop("RAW_NATIVE_CLI", None)
         try:

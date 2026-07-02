@@ -226,7 +226,10 @@ class Handler(BaseHTTPRequestHandler):
             sess = _SESSIONS.get(m.group(1))
             if not sess:
                 return self._send({"error": "not found"}, 404)
-            step = sess.step() if m.group(2) == "step" else sess.inject(body.get("params"))
+            try:
+                step = sess.step() if m.group(2) == "step" else sess.inject(body.get("params"))
+            except (ValueError, TypeError) as e:
+                return self._send({"error": str(e)}, 400)
             return self._send({"session_id": m.group(1), "step": step, "state": sess.state()})
 
         # The ACTIVE two-way native render: the model requests a re-render with a
