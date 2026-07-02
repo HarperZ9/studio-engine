@@ -81,6 +81,7 @@ def field_program(generator: str, e: ex.Expr, palette: list, t0: float,
         value_range=[round(lo, 6), round(hi, 6)],
         color={"mode": "ramp", "stops": len(palette)},
         expr_sha256=ex.sha(e),
+        expr_ast=ex.to_dict(e),   # exact tree so a headless renderer can re-hash + tamper-check
         notes="WebGL1 fragment; field() is the verified strand expr; animate u_time in [0, period).",
     )
 
