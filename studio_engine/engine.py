@@ -168,9 +168,15 @@ def generators() -> list[str]:
 
 def run(seed: int = 0, generator: str = "phyllotaxis", max_steps: int = 16,
         target: float = 0.9, floor: float = 0.6, scheme: str = "analogous",
-        corpus_path: str | Path | None = _CORPUS_PATH):
+        corpus_path: str | Path | None = _CORPUS_PATH, render_frames: bool = False):
     """Generator form: yields ('step', Step) per iteration, then ('world', World).
-    Powers live streaming + interactive sessions; simulate() is the collected form."""
+    Powers live streaming + interactive sessions; simulate() is the collected form.
+
+    When ``render_frames`` is True the engine also drives the headless RasterRenderer over the
+    world's render layer and yields ('frame', dict) entries (a deterministic strip across the loop)
+    just before the World. Each frame's sha256 is folded into the receipt's artifact_shas and
+    ``raster.native-render`` is added to organ_ids -- so the pixels the user SEES are the same
+    witnessed math, and the frame becomes a re-checkable link in the provenance chain."""
     gens = _gens()
     if generator not in gens:
         raise ValueError(f"unknown generator {generator!r}; have {list(gens)}")
@@ -233,8 +239,21 @@ def run(seed: int = 0, generator: str = "phyllotaxis", max_steps: int = 16,
     timeline = temporal.build_timeline(spec, params)
     organ_ids = [generator, "palette.oklch", "criteria.multi_axis", "criteria.novelty",
                  "sonify.params", render_id]
-    receipt = Receipt(sid, seed, organ_ids, [rprog.expr_sha256, svg.sha256, aprog.expr_sha256],
-                      round(coh, 4))
+    artifact_shas = [rprog.expr_sha256, svg.sha256, aprog.expr_sha256]
+
+    # The eye's live delivery: render pixels from the SAME witnessed program and fold the frame
+    # hashes into the receipt, so a rendered frame is a re-checkable link in the provenance chain.
+    if render_frames:
+        from . import raster_renderer as rr
+        period = timeline.period if timeline else 0.0
+        frames = rr.render_frames(rprog, palette, period)
+        if frames:
+            organ_ids.append("raster.native-render")
+            artifact_shas.extend(f["sha256"] for f in frames)
+        for fr in frames:
+            yield ("frame", fr)
+
+    receipt = Receipt(sid, seed, organ_ids, artifact_shas, round(coh, 4))
     yield ("world", World(id=sid, title=f"{generator.title()} #{seed}", layers=[layer],
                           audio_program=aprog, timeline=timeline, trajectory=traj,
                           receipt=receipt, palette=palette, composition=None,
@@ -243,10 +262,15 @@ def run(seed: int = 0, generator: str = "phyllotaxis", max_steps: int = 16,
 
 def simulate(seed: int = 0, generator: str = "phyllotaxis", max_steps: int = 16,
              target: float = 0.9, floor: float = 0.6, scheme: str = "analogous",
-             corpus_path: str | Path | None = _CORPUS_PATH) -> World:
-    """Collected form of run() -- the full witnessed World."""
+             corpus_path: str | Path | None = _CORPUS_PATH,
+             render_frames: bool = False) -> World:
+    """Collected form of run() -- the full witnessed World.
+
+    With ``render_frames`` the World's receipt additionally carries the rendered frame hashes
+    (and ``raster.native-render`` in organ_ids); the frames themselves stream only via run()."""
     world: World | None = None
-    for _kind, _obj in run(seed, generator, max_steps, target, floor, scheme, corpus_path):
+    for _kind, _obj in run(seed, generator, max_steps, target, floor, scheme, corpus_path,
+                           render_frames):
         if _kind == "world":
             world = _obj  # type: ignore[assignment]
     assert world is not None
