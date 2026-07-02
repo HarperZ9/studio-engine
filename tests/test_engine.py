@@ -104,6 +104,60 @@ class TestRunStream(unittest.TestCase):
                 self.assertEqual(world.id, engine.simulate(SEED, generator=gen, corpus_path=None).id)
 
 
+class TestRenderFramesIntegration(unittest.TestCase):
+    """render_frames=True drives the headless renderer and grounds frames in the receipt."""
+
+    def test_frames_stream_and_ground_receipt(self):
+        import base64
+        import hashlib
+        items = list(engine.run(SEED, generator="gyroid", corpus_path=None, render_frames=True))
+        kinds = [k for k, _ in items]
+        # Order: steps..., frames..., then exactly one world (the terminal item).
+        self.assertEqual(kinds[-1], "world")
+        self.assertEqual(kinds.count("world"), 1)
+        frames = [o for k, o in items if k == "frame"]
+        self.assertGreater(len(frames), 0)
+        world = items[-1][1]
+        # Every frame's short sha is carried in the receipt's artifact_shas, and the renderer
+        # organ is registered. Re-hashing the shipped PNG reproduces the receipted sha.
+        self.assertIn("raster.native-render", world.receipt.organ_ids)
+        for fr in frames:
+            png = base64.b64decode(fr["png_base64"])
+            self.assertTrue(png.startswith(b"\x89PNG"))
+            self.assertEqual(hashlib.sha256(png).hexdigest()[:16], fr["sha256"])
+            self.assertIn(fr["sha256"], world.receipt.artifact_shas)
+            self.assertEqual(fr["delivery_receipt"]["expr_sha256"],
+                             world.layers[0].render_program.expr_sha256)
+
+    def test_frames_are_deterministic_across_runs(self):
+        a = [o["sha256"] for k, o in
+             engine.run(SEED, "gyroid", corpus_path=None, render_frames=True) if k == "frame"]
+        b = [o["sha256"] for k, o in
+             engine.run(SEED, "gyroid", corpus_path=None, render_frames=True) if k == "frame"]
+        self.assertEqual(a, b)
+
+    def test_animatable_strip_spans_the_loop(self):
+        frames = [o for k, o in
+                  engine.run(SEED, "gyroid", corpus_path=None, render_frames=True) if k == "frame"]
+        # Gyroid is animatable -> a multi-frame strip whose frames are not all identical.
+        self.assertGreater(len(frames), 1)
+        self.assertGreater(len({f["sha256"] for f in frames}), 1)
+
+    def test_point_generator_renders_one_frame(self):
+        frames = [o for k, o in
+                  engine.run(SEED, "phyllotaxis", corpus_path=None, render_frames=True)
+                  if k == "frame"]
+        self.assertEqual(len(frames), 1)
+        self.assertEqual(frames[0]["delivery_receipt"]["target"], "point-recipe")
+
+    def test_render_frames_false_yields_no_frames_and_stable_id(self):
+        with_flag = engine.simulate(SEED, "gyroid", corpus_path=None, render_frames=True)
+        without = engine.simulate(SEED, "gyroid", corpus_path=None, render_frames=False)
+        # The world id (scene identity) is independent of whether frames were rendered.
+        self.assertEqual(with_flag.id, without.id)
+        self.assertNotIn("raster.native-render", without.receipt.organ_ids)
+
+
 class TestLibrary(unittest.TestCase):
     def test_library_returns_organ_info_entries(self):
         lib = engine.library()
