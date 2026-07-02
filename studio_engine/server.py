@@ -155,6 +155,10 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         try:
             for kind, obj in run(seed, gen, scheme=scheme):
+                # Persist the witnessed World so the SHOWN trajectory stays re-checkable
+                # at /scene/{id}: the live stream and the recorded receipt are one thing.
+                if kind == "world":
+                    _SCENES[obj.id] = obj
                 data = asdict(obj) if kind == "step" else obj.to_json()
                 self.wfile.write(f"event: {kind}\ndata: {json.dumps(data)}\n\n".encode("utf-8"))
                 self.wfile.flush()

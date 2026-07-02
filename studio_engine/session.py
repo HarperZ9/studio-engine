@@ -74,10 +74,21 @@ class Session:
         return self._record("refine", "auto-refine toward weakest" if improved else "no gain; step shrunk")
 
     def inject(self, overrides: dict | None) -> dict:
-        """Operator steers: override one or more parameters (clamped to bounds)."""
+        """Operator steers: override one or more parameters (clamped to bounds).
+
+        Can-it-FAIL guard: a value the bounds clamp is a REJECTION -- the operator's
+        intent was not honoured. We surface each rejected param as
+        `rejected[param] = [user_value, clamped_value]` on the returned step so the
+        UI can warn instead of silently applying a different value.
+        """
         ov = {k: float(v) for k, v in (overrides or {}).items() if k in self.spec["bounds"]}
-        self.params = _clamp(self.spec, {**self.params, **ov})
-        return self._record("generate", f"operator inject: {sorted(ov) or 'none'}")
+        clamped = _clamp(self.spec, {**self.params, **ov})
+        rejected = {k: [v, round(clamped[k], 4)] for k, v in ov.items()
+                    if abs(clamped[k] - v) > 1e-9}
+        self.params = clamped
+        entry = self._record("generate", f"operator inject: {sorted(ov) or 'none'}")
+        entry["rejected"] = rejected
+        return entry
 
     def render_step(self, params: dict | None = None, *, binary: str | None = None) -> dict:
         """The ACTIVE two-way render: the model requests a native re-render with
@@ -140,6 +151,8 @@ class Session:
             "weakest": min(margins, key=lambda a: margins[a]),
             "converged": coh >= self.target and all(s >= self.floor for s in margins.values()),
             "steps": self.n, "history": self.history,
+            # Per-param (lo, hi) bounds so the frontend slider panel is bounds-aware.
+            "bounds": {p: [lo, hi] for p, (lo, hi) in self.spec["bounds"].items()},
             "program": asdict(self.program()),
             "native_renders": self.render_history, "last_camera": self.last_camera,
         }
