@@ -86,6 +86,44 @@ def sha(e: "Expr") -> str:
     return hashlib.sha256(_canon(e).encode("utf-8")).hexdigest()[:16]
 
 
+def to_dict(e: "Expr") -> dict:
+    """JSON-safe serialization preserving the EXACT tree (including n-ary associativity).
+
+    A leaf ('const'/'var') carries its single scalar/name arg; every other op carries its child
+    exprs. Round-trips through from_dict to a byte-identical canonical form, so sha(from_dict(
+    to_dict(e))) == sha(e). This is what lets a headless renderer re-hash the shipped AST and
+    catch tampering without depending on the lossy GLSL emit/parse associativity.
+    """
+    if e.op in ("const", "var"):
+        return {"op": e.op, "arg": e.args[0]}
+    return {"op": e.op, "args": [to_dict(a) for a in e.args]}
+
+
+def from_dict(d: dict) -> "Expr":
+    """Inverse of to_dict. Validates the op and shape; raises ValueError on anything malformed."""
+    if not isinstance(d, dict) or "op" not in d:
+        raise ValueError(f"not an expr node: {d!r}")
+    op = d["op"]
+    if op not in OPS:
+        raise ValueError(f"unknown op {op!r}")
+    if op == "const":
+        return Expr("const", (float(d["arg"]),))
+    if op == "var":
+        name = d["arg"]
+        if name not in VARS:
+            raise ValueError(f"unknown var {name!r}")
+        return Expr("var", (name,))
+    args = d.get("args")
+    if not isinstance(args, list) or not args:
+        raise ValueError(f"op {op!r} needs a non-empty args list")
+    children = tuple(from_dict(a) for a in args)
+    if op in _UNARY and len(children) != 1:
+        raise ValueError(f"unary op {op!r} needs exactly 1 arg, got {len(children)}")
+    if op in _BINARY and len(children) != 2:
+        raise ValueError(f"binary op {op!r} needs exactly 2 args, got {len(children)}")
+    return Expr(op, children)
+
+
 def sample_field(e: "Expr", n: int, t: float = 0.0) -> list:
     """Row-major n*n samples over u,v in [-1,1] (cell centers), at fixed t."""
     n = max(1, n)
