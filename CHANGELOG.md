@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-07-02 - Watch It Think + Parameter Steering (wave-2)
+
+- Added `handoff/watch-it-think.html`: a single-file, zero-dep chamber that renders
+  the convergence trajectory **as it happens**. A hand-rolled parallel-coordinates
+  SVG plots per-axis margins over refine steps (weakest axis highlighted; axes
+  coloured by the witnessed criterion kind), fed live by `EventSource(/simulate/stream)`.
+- Added a parameter-steering mode: one bounds-clamped slider per param (bounds from
+  the new `state.bounds`), each POSTing `/session/{id}/inject`; the trajectory chart
+  and the live `RenderProgram` update on every steer.
+- `Session.inject()` now surfaces clamped steers: `step.rejected[param] =
+  [user_value, clamped_value]` so a rejected parameter is shown (red badge + live-region
+  announcement), never silently applied.
+- `/simulate/stream` now persists the witnessed World into the scene store, so the
+  shown trajectory is re-checkable at `/scene/{id}` -- the visualization and the
+  accountability artifact are one thing.
+- New tests: `test_sse_step_contract.py` (streamed steps == persisted trajectory
+  across all 10 generators), `test_watch_it_think.py` (inject rejection over the wire),
+  and session-level rejection/bounds cases. 167 pass.
+
 ## 2026-07-02 - Live Headless Renderer
 
 - Added `studio_engine/raster_renderer.py`: a zero-dependency software rasterizer
