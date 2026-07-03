@@ -28,6 +28,13 @@ jobs:
       - name: Install package
         run: python -m pip install -e .
 
+      # studio_engine.certify composes the coherence-membrane spine (an internal
+      # peer flagship, not a third-party dep and not published to PyPI). engine.py
+      # imports certify eagerly, so the whole package needs the spine at import
+      # time; install it from source so the suite can import studio_engine.
+      - name: Install coherence-membrane spine
+        run: python -m pip install "git+https://github.com/HarperZ9/coherence-membrane.git"
+
       - name: Run Python tests
         run: python -m unittest discover -s tests
 
