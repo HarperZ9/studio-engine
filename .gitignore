@@ -7,3 +7,6 @@ _corpus.json
 *.egg-info/
 dist/
 build/
+
+# Local Claude Code agent config (machine-specific)
+.claude/
