@@ -117,6 +117,16 @@ class TestServer(unittest.TestCase):
         self.assertEqual(st, 400)
         self.assertIn("error", json.loads(body))
 
+    def test_render_malformed_value_returns_clean_400(self):
+        # A non-numeric render param must yield a clean 400 (like the sibling
+        # /step, /inject, /simulate handlers), not an unhandled 500 /
+        # connection-reset from int()/float() raising inside RenderParams.from_dict.
+        _, sbody = self._post("/session", {"seed": 7, "generator": "gyroid"})
+        sid = json.loads(sbody)["session_id"]
+        st, body = self._post(f"/session/{sid}/render", {"params": {"width": "not-an-int"}})
+        self.assertEqual(st, 400)
+        self.assertIn("error", json.loads(body))
+
     def test_session_render_endpoint_records_step(self):
         old = os.environ.pop("RAW_NATIVE_CLI", None)
         try:
