@@ -240,7 +240,10 @@ class Handler(BaseHTTPRequestHandler):
             sess = _SESSIONS.get(m.group(1))
             if not sess:
                 return self._send({"error": "not found"}, 404)
-            step = sess.render_step(body.get("params"))
+            try:
+                step = sess.render_step(body.get("params"))
+            except (ValueError, TypeError) as e:
+                return self._send({"error": str(e)}, 400)
             return self._send({"session_id": m.group(1), "step": step, "state": sess.state()})
 
         return self._send({"error": "not found", "path": path}, 404)
