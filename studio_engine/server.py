@@ -155,6 +155,10 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         try:
             for kind, obj in run(seed, gen, scheme=scheme):
+                # Persist the witnessed World so the SHOWN trajectory stays re-checkable
+                # at /scene/{id}: the live stream and the recorded receipt are one thing.
+                if kind == "world":
+                    _SCENES[obj.id] = obj
                 data = asdict(obj) if kind == "step" else obj.to_json()
                 self.wfile.write(f"event: {kind}\ndata: {json.dumps(data)}\n\n".encode("utf-8"))
                 self.wfile.flush()
@@ -222,7 +226,10 @@ class Handler(BaseHTTPRequestHandler):
             sess = _SESSIONS.get(m.group(1))
             if not sess:
                 return self._send({"error": "not found"}, 404)
-            step = sess.step() if m.group(2) == "step" else sess.inject(body.get("params"))
+            try:
+                step = sess.step() if m.group(2) == "step" else sess.inject(body.get("params"))
+            except (ValueError, TypeError) as e:
+                return self._send({"error": str(e)}, 400)
             return self._send({"session_id": m.group(1), "step": step, "state": sess.state()})
 
         # The ACTIVE two-way native render: the model requests a re-render with a

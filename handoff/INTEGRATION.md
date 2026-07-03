@@ -176,3 +176,32 @@ DirectX/driver) is raw's separate telos, not this package. The shaders here are 
 run in the browser. Build the chamber as the experiential front: every frame's **geometry is the
 verified expression** (the colour `value_range` is sampled across the whole loop so it doesn't clip),
 and a World is deterministic for a fixed corpus -- reproducible and re-checkable via the receipt.
+
+## 10. Watch it think + steer (wave-2)
+
+The edge over tools that hide their reasoning: surface the loop converging **as it happens**, and
+let the operator steer it. `handoff/watch-it-think.html` is the runnable single-file chamber; two
+modes, both zero-dep vanilla JS:
+
+- **Watch it think (read-only).** Opens `EventSource(/simulate/stream)`. Each `step` event carries
+  `{index, phase, params, margins, weakest, verdicts}`; the page plots a hand-rolled parallel-
+  coordinates SVG where each row is a refine step and each point's horizontal position on its axis is
+  that axis's margin (right = 1.0 = passed). The weakest axis is a larger red dot; axes are coloured
+  by the criterion **kind** the engine witnessed (`verdict.detail`: objective=cyan, subjective=purple,
+  novelty=gold). On the `world` event the final `RenderProgram` compiles and renders live.
+
+- **Steer parameters (read-write).** `POST /session` -> `{session_id, state}`. `state.bounds` gives
+  each param's `[lo, hi]`; the page builds one bounds-clamped `<input type=range>` per param. Dragging
+  a slider debounces then `POST /session/{id}/inject {params:{name:value}}`; the response `step` and
+  `state.program` update the trajectory chart and the live render. An auto `/step` seeds the chart.
+
+**The two are one thing (accountability = merit).** The trajectory the operator watches is the same
+`Step` list the engine persists: the streamed world is stored, so `GET /scene/{id}.trajectory` must
+match the shown `step.margins` byte-for-byte. `tests/test_sse_step_contract.py` enforces this across
+every generator -- a divergence between what is shown and what was witnessed fails the suite.
+
+**Can-it-FAIL — rejected steers are surfaced, never silent.** `inject()` compares the operator's
+value to the clamped result and returns `step.rejected[param] = [user_value, clamped_value]` for any
+param the bounds rejected. The UI paints a red badge on that slider, snaps it to the accepted value,
+and announces the clamp in a live region. `tests/test_watch_it_think.py` and `test_session.py` assert
+the rejection map is populated out-of-bounds and empty in-bounds.
