@@ -1,10 +1,11 @@
-# studio-engine
+<p align="center"><img src=".github/assets/banner.svg" alt="studio-engine: A native simulation and render engine: generate, critique, refine, and keep the scene." width="100%"></p>
 
-<p align="center">
-  <img src="docs/brand/studio-engine-hero.png" alt="Studio Engine, generate shaders, sound, and motion as replayable creative worlds">
-</p>
+**A native simulation and render engine: generate, critique, refine, and keep the scene.**
 
-> Generate shaders, sound, and motion as replayable creative worlds.
+![version](https://img.shields.io/badge/version-0.2.0-26dfe8?style=flat-square&labelColor=14041b)
+![license](https://img.shields.io/badge/license-AGPL--3.0--or--later-8f8095?style=flat-square&labelColor=14041b)
+
+Studio Engine generates shaders, sound, and motion as replayable creative worlds. A single expression algebra drives everything: each field ships as a WebGL fragment shader for the eye, a portable Web-Audio synth graph for the ear, and a motion timeline with time as a first-class axis. It runs on Python 3.10+ with zero third-party dependencies, exposing a CLI, a local HTTP API, and a reference browser chamber that compiles the shipped GLSL live. Every world writes a receipt you can re-check.
 
 ## Try it
 
