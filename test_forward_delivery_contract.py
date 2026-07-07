@@ -61,7 +61,7 @@ class ForwardDeliveryContractTests(unittest.TestCase):
 
         for heading in ["## Try it", "## Why it matters", "## For developers"]:
             self.assertIn(heading, text)
-        self.assertIn("docs/brand/studio-engine-hero.png", text)
+        self.assertIn(".github/assets/banner.svg", text)
         self.assertIn("replayable creative worlds", text.lower())
         self.assertIn("python -m unittest discover -s tests", text)
         self.assertIn("node --test showcase/tests/*.test.mjs", text)
