@@ -153,3 +153,11 @@ See [AGENTS.md](AGENTS.md) for the repo operating boundary and [CHANGELOG.md](CH
 AGPL-3.0-or-later, dual-license ready: the author retains copyright and commercial licenses are available.
 
 **Zain Dana Harper**, small tools with explicit edges. Built with Claude Code; reviewed, tested, owned.
+
+## What this believes
+
+This tool is one lane of a family that holds a single belief steady across
+every surface: knowledge open to anyone who can attain the means; acceptance
+decided by external checks, never reputation; every result re-runnable;
+honest nulls first-class; ownership earned by comprehension; learning woven
+into the work. The full text lives in [CREDO.md](CREDO.md).
