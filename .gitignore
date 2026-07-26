@@ -10,3 +10,6 @@ build/
 
 # Local Claude Code agent config (machine-specific)
 .claude/
+
+# Local-only Claude instructions (global standard: never commit)
+CLAUDE.local.md
