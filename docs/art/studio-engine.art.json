@@ -1,0 +1,87 @@
+{
+  "header": {
+    "name": "studio-engine",
+    "role": "generative worlds, with a re-checkable receipt",
+    "tagline": "Generate a world, then re-render it and check the hash yourself.",
+    "words": ["seed", "generate", "critique", "refine", "witness"]
+  },
+  "flows": [
+    {
+      "file": "refine-loop.svg",
+      "kicker": "from one integer to a world that survived its own critics",
+      "title": "How a seed becomes a converged world, or an honest unconverged one",
+      "footnote": "The loop keeps the best candidate it ever saw, not the last one it tried, so a run that never reaches the target still returns its strongest result and says so. Nothing about the path is hidden: every step it took is carried in the trajectory, with the per-axis margins that made it move.",
+      "alt": "Eight stages of turning a seed into a witnessed generative world: seed, palette, generate, measure, critique, reflect, refine, and witness. The seed drives a fixed integer hash, so one seed with the same generator, colour scheme and novelty corpus rebuilds the same world every time. The corpus grows with each world it grounds, which is why it is named alongside the seed rather than left implicit. The palette is six perceptual swatches from OKLCh, an even lightness ramp across a hue spread the scheme chooses. Parameters start perturbed inside their declared bounds and are clamped there. Measurement samples the generator over a twenty by twenty grid and reduces it to five features: coverage, centroid offset, contrast, entropy and hue. Critique scores each of the generator's axes from zero to one, adds novelty against a persistent corpus of everything made before, and combines them by harmonic mean, so one weak axis pulls the whole score down instead of being averaged away. Reflection picks the single weakest axis. Refinement is bounded coordinate descent: it tries one step up and one step down on every parameter and keeps the single move that improves cohesion most, halving its reach whenever a whole pass fails to improve. Witnessing keeps the best candidate the run ever saw and records whether it converged, which needs cohesion at the target and every axis above the floor. Three outcomes: converged, best effort, and uncertified.",
+      "stages": [
+        {"title": "Seed", "note": "One integer, hashed to a start."},
+        {"title": "Palette", "note": "Six OKLCh swatches, ramped."},
+        {"title": "Generate", "note": "Parameters inside their bounds."},
+        {"title": "Measure", "note": "Five features off a sample grid."},
+        {"title": "Critique", "note": "Per-axis margins, plus novelty."},
+        {"title": "Reflect", "note": "The weakest axis, not the mean."},
+        {"title": "Refine", "note": "One bounded move at a time."},
+        {"title": "Witness", "note": "The best candidate, and a receipt."}
+      ],
+      "returns": [
+        {"from": 2, "to": 0, "label": "SAME SEED AND CORPUS, SAME WORLD"},
+        {"from": 6, "to": 4, "label": "A STALLED PASS HALVES ITS OWN REACH"}
+      ],
+      "outcomes": [
+        {"label": "CONVERGED", "note": "every axis cleared its floor", "tone": "verified"},
+        {"label": "BEST EFFORT", "note": "the strongest try, marked short", "tone": "drift"},
+        {"label": "UNCERTIFIED", "note": "the outside oracle was absent", "tone": "none"}
+      ]
+    },
+    {
+      "file": "strand-lane.svg",
+      "kicker": "the picture on screen is the math that was graded",
+      "title": "How one expression reaches a shader, a synth, and a PNG without drifting",
+      "footnote": "A generator is one closed-form expression over u, v and t. Everything else is a projection of it, which is what makes the browser chamber and the headless rasterizer comparable at all. A re-implementation on either side would render something plausible and unverifiable.",
+      "alt": "Eight stages of taking one expression to every backend without letting the backends drift: expression, emit, parse back, compare, ship, rehash, raster, and frame hash. A generator is one frozen closed-form tree over the variables u, v, t, x, y and i, with twelve operations and no control flow or state. Emitting it produces a GLSL fragment whose division is guarded by a helper that mirrors the Python evaluator's own guard exactly, so the two agree on every input. A recursive-descent parser reads that GLSL back into a tree, and the round trip has to evaluate equal to the original, which is what keeps the emitter honest. The shipped program carries the tree, the source, the uniforms and the sha256 of the canonical expression. Before a single pixel is drawn, the rasterizer rebuilds the tree from the shipped structure, re-hashes it, and refuses to render when the hash no longer matches, so a tampered shader is refused rather than drawn. Rasterizing samples the same u and v range the shader does and maps values through the same piecewise-linear palette ramp, with the top scanline sampling v equals plus one so the headless frame is not flipped against the browser. Each frame's own sha256 is folded back into the receipt. Three outcomes: rendered, refused, and not renderable.",
+      "stages": [
+        {"title": "Expression", "note": "One frozen tree, no state at all."},
+        {"title": "Emit", "note": "A GLSL fragment, guarded divides."},
+        {"title": "Parse back", "note": "The emitted subset, read again."},
+        {"title": "Compare", "note": "The round trip has to evaluate equal."},
+        {"title": "Ship", "note": "Tree, source, uniforms and a hash."},
+        {"title": "Rehash", "note": "The tree, checked before any pixel."},
+        {"title": "Raster", "note": "The shader's own sampling, in software."},
+        {"title": "Frame hash", "note": "Folded back into the receipt."}
+      ],
+      "returns": [
+        {"from": 2, "to": 0, "label": "THE ROUND TRIP HAS TO EVALUATE EQUAL"},
+        {"from": 6, "to": 4, "label": "A TAMPERED PROGRAM IS REFUSED, NOT DRAWN"}
+      ],
+      "outcomes": [
+        {"label": "RENDERED", "note": "pixels from the graded math", "tone": "verified"},
+        {"label": "REFUSED", "note": "the hash moved, so nothing drew", "tone": "drift"},
+        {"label": "NOT RENDERABLE", "note": "an empty strip, never a fake one", "tone": "none"}
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "file": "engine-table.svg",
+      "kicker": "every number the engine reports",
+      "title": "Where each figure in a world comes from, and what it does not claim",
+      "source": "studio_engine/engine.py, criteria.py and raster_renderer.py",
+      "heads": ["what it holds", "how many", "where the number comes from"],
+      "fields": [
+        {"key": "generators", "value": "ten of them", "note": "Phyllotaxis, gyroid, quasicrystal, attractor, harmonograph, flowfield, metaballs, turbulence, rings and moire."},
+        {"key": "criteria axes", "value": "seven axes", "note": "Three judge a parameter against a constant the engine did not author. Four judge measured features of the output."},
+        {"key": "cohesion", "value": "harmonic mean", "note": "One weak axis pulls the whole score down, which is the point. An arithmetic mean would let a flaw average itself away."},
+        {"key": "the bar", "value": "target, then floor", "note": "Converged means cohesion at or above the target and every single axis at or above the floor. Either one alone is not enough."},
+        {"key": "the loop", "value": "sixteen steps", "note": "The default cap. A run stops earlier when it converges, or when its step size shrinks past two hundredths of a range."},
+        {"key": "the step size", "value": "a third, halving", "note": "It starts at a third of each parameter's range and multiplies by just over a half whenever a full pass fails to improve."},
+        {"key": "the sample grid", "value": "twenty squared", "note": "Four hundred cells reduced to coverage, centroid offset, contrast, entropy and hue. That vector is what the critics read."},
+        {"key": "novelty", "value": "against a corpus", "note": "Nearest-neighbour distance in the five-feature unit cube over its diagonal. First of its kind scores one, and the corpus grows each run."},
+        {"key": "the palette", "value": "six swatches", "note": "OKLCh at fixed chroma, lightness ramped across a fixed span, hue spread chosen by the scheme rather than by taste."},
+        {"key": "the algebra", "value": "twelve operations", "note": "Over six variables, with no control flow and no state, so a shader and a software raster derive from one frozen tree."},
+        {"key": "external verdict", "value": "outside the engine", "tone": "drift", "note": "An independent oracle with its own tolerance. When it is not installed the record reads unverifiable rather than passing itself."},
+        {"key": "rendered frames", "value": "eight per loop", "note": "A deterministic strip across the loop period, or one still frame. Each frame's own sha256 goes into the receipt."}
+      ],
+      "alt": "Twelve rows covering every number a world reports and where it comes from. Ten generators ship: phyllotaxis, gyroid, quasicrystal, attractor, harmonograph, flowfield, metaballs, turbulence, rings and moire. Seven criteria axes are available, three judging a parameter against a constant the engine did not author and four judging measured features of the output. Cohesion is the harmonic mean of the axes, so one weak axis pulls the whole score down instead of averaging itself away. Convergence needs cohesion at or above the target and every single axis at or above the floor, and either condition alone is not enough. The loop caps at sixteen steps by default, stopping earlier on convergence or when the step size shrinks past two hundredths of a parameter range. That step size starts at a third of each range and multiplies by just over a half whenever a full pass fails to improve. Measurement runs over a twenty by twenty grid, four hundred cells reduced to coverage, centroid offset, contrast, entropy and hue. Novelty is nearest-neighbour distance in that five-feature unit cube over its diagonal, so a first of its kind scores one, and the corpus grows with every world it grounds. The palette is six OKLCh swatches at fixed chroma with lightness ramped across a fixed span and hue spread chosen by the scheme. The algebra is twelve operations over six variables with no control flow and no state, so a shader and a software rasterizer derive from one frozen tree. The accented row is the external verdict, which comes from an independent oracle with its own tolerance and reads unverifiable when that oracle is not installed rather than passing itself. The last row is rendered frames: a deterministic strip of eight across the loop period, or a single still, each frame's own sha256 folded into the receipt.",
+      "footnote": "None of these numbers is a claim about beauty. The objective axes measure a parameter against a constant, the subjective ones measure the output against a fixed statistic, and the engine's own tag is not the external verdict. What a receipt promises is that one seed against one novelty corpus rebuilds the same world, and that the picture you looked at came from the math that was graded."
+    }
+  ]
+}
