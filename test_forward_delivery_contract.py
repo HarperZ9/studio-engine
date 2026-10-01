@@ -48,7 +48,7 @@ class ForwardDeliveryContractTests(unittest.TestCase):
             "AGENTS.md",
             ".github/FUNDING.yml",
             ".github/workflows/ci.yml",
-            ".github/assets/zentropy-banner.png",
+            ".github/assets/banner.png",
             "docs/brand/studio-engine-hero.png",
             "project-docs/specs/SPEC-studio-engine-forward-delivery.md",
         ]
