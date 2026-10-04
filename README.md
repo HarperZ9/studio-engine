@@ -1,9 +1,20 @@
-<p align="center"><img src="docs/art/studio-engine-header.svg" alt="studio-engine: generative worlds, with a re-checkable receipt." width="100%"></p>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HarperZ9/studio-engine/main/docs/art/hero-dark.svg">
+  <img src="https://raw.githubusercontent.com/HarperZ9/studio-engine/main/docs/art/hero-light.svg" alt="studio-engine: Generate replayable shaders, sound, and motion, each with a receipt. Streamlines of fine lines spiral inward around a bright core." width="100%">
+</picture>
 
-**A native simulation and render engine: generate, critique, refine, and keep the scene.**
+# studio-engine
 
-![version](https://img.shields.io/badge/version-0.3.0-26dfe8?style=flat-square&labelColor=14041b)
-[![license](https://img.shields.io/badge/license-FSL--1.1--MIT-8f8095?style=flat-square&labelColor=14041b)](LICENSE)
+Generate replayable shaders, sound, and motion, each with a receipt.
+
+```
+python -m studio_engine 7 gyroid
+```
+
+[![version: 0.3.0](https://img.shields.io/badge/version-0.3.0-e6e1d6?style=flat-square&labelColor=1a1712)](https://github.com/HarperZ9/studio-engine/releases/latest)
+[![CI](https://github.com/HarperZ9/studio-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/HarperZ9/studio-engine/actions/workflows/ci.yml)
+[![license](https://img.shields.io/badge/license-FSL--1.1--MIT-e6e1d6?style=flat-square&labelColor=1a1712)](https://github.com/HarperZ9/studio-engine/blob/main/LICENSE)
+![python 3.10+](https://img.shields.io/badge/python-3.10%2B-e6e1d6?style=flat-square&labelColor=1a1712)
 
 Studio Engine generates shaders, sound, and motion as replayable creative worlds. A single expression algebra drives everything: each field ships as a WebGL fragment shader for the eye, a portable Web-Audio synth graph for the ear, and a motion timeline with time as a first-class axis. It runs on Python 3.10+ with zero third-party dependencies, exposing a CLI, a local HTTP API, and a reference browser chamber that compiles the shipped GLSL live. Every world writes a receipt you can re-check.
 
