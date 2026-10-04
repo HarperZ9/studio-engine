@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0 (unreleased)
+
+- From v0.3.0, code is licensed FSL-1.1-MIT. Earlier releases remain under AGPL-3.0-or-later.
+- `LICENSE` is the FSL-1.1-MIT text from fsl.software, with licensor Zain Dana Harper and copyright 2026.
+- `pyproject.toml` declares `license = "FSL-1.1-MIT"` (PEP 639, setuptools 77 or later) and drops the AGPL classifier; PyPI has no FSL classifier. Version 0.3.0 in `pyproject.toml`, `__version__`, the health endpoint docs and `handoff/openapi.json`.
+- No version was tagged before this change, so AGPL-3.0-or-later covers every commit before it.
+- No code behaviour changed.
+
 ## 2026-07-02 - Watch It Think + Parameter Steering (wave-2)
 
 - Added `handoff/watch-it-think.html`: a single-file, zero-dep chamber that renders

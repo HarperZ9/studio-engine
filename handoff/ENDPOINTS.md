@@ -22,7 +22,7 @@ Responses are **`World`** (schema `studio-engine/2`). Null-valued fields
 
 ### GET /health
 ```json
-{ "ok": true, "service": "studio-engine", "version": "0.2.0" }
+{ "ok": true, "service": "studio-engine", "version": "0.3.0" }
 ```
 
 ### GET /generators

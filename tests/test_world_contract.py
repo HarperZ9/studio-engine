@@ -9,7 +9,7 @@ import json
 import unittest
 from pathlib import Path
 
-from studio_engine import engine
+from studio_engine import __version__, engine
 
 _ROOT = Path(__file__).resolve().parent.parent
 _TYPES = (_ROOT / "handoff" / "types.ts").read_text(encoding="utf-8")
@@ -30,7 +30,7 @@ class TestContractCoverage(unittest.TestCase):
         self.assertIn("studio-engine/2", _TYPES)
 
     def test_openapi_version(self):
-        self.assertEqual(_OPENAPI.get("info", {}).get("version"), "0.2.0")
+        self.assertEqual(_OPENAPI.get("info", {}).get("version"), __version__)
 
     def test_openapi_declares_new_endpoints(self):
         paths = _OPENAPI.get("paths", {})

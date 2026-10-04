@@ -1,19 +1,19 @@
 [build-system]
-requires = ["setuptools>=61"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "studio-engine"
-version = "0.2.0"
+version = "0.3.0"
 description = "Zero-dependency Python engine that generates replayable creative worlds with shaders, audio data, motion timelines, and receipts."
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "AGPL-3.0-or-later" }
+license = "FSL-1.1-MIT"
+license-files = ["LICENSE"]
 authors = [{ name = "Zain Dana Harper" }]
 keywords = ["generative", "verification", "accountability", "creative", "rendering", "zero-dependency", "glsl", "webaudio", "shader", "compositor", "oklab", "phyllotaxis"]
 classifiers = [
   "Programming Language :: Python :: 3",
-  "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
   "Topic :: Multimedia :: Graphics",
   "Topic :: Artistic Software",
 ]
