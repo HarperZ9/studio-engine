@@ -49,7 +49,8 @@ class ForwardDeliveryContractTests(unittest.TestCase):
             ".github/FUNDING.yml",
             ".github/workflows/ci.yml",
             ".github/assets/banner.png",
-            "docs/brand/studio-engine-hero.png",
+            "docs/art/social.png",
+            "docs/brand/mark-512.png",
             "project-docs/specs/SPEC-studio-engine-forward-delivery.md",
         ]
 
@@ -62,7 +63,8 @@ class ForwardDeliveryContractTests(unittest.TestCase):
 
         for heading in ["## Try it", "## Why it matters", "## For developers"]:
             self.assertIn(heading, text)
-        self.assertIn("docs/art/studio-engine-header.svg", text)
+        self.assertIn("docs/art/hero-light.svg", text)
+        self.assertIn("docs/art/hero-dark.svg", text)
         self.assertIn("replayable creative worlds", text.lower())
         self.assertIn("python -m unittest discover -s tests", text)
         self.assertIn("node --test showcase/tests/*.test.mjs", text)
