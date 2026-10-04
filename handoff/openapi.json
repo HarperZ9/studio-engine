@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "studio-engine API",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "description": "Native, zero-dependency creative-verification simulation engine. Emits witnessed Worlds (self-describing render programs + audio graph + motion timeline + reasoning trajectory) for an experience-chamber frontend. schema: studio-engine/2. Note: null-valued fields (audio_program, timeline, composition, layer.preview) are omitted from responses."
   },
   "servers": [{ "url": "http://127.0.0.1:8777" }],

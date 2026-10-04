@@ -2,8 +2,8 @@
 
 **A native simulation and render engine: generate, critique, refine, and keep the scene.**
 
-![version](https://img.shields.io/badge/version-0.2.0-26dfe8?style=flat-square&labelColor=14041b)
-![license](https://img.shields.io/badge/license-AGPL--3.0--or--later-8f8095?style=flat-square&labelColor=14041b)
+![version](https://img.shields.io/badge/version-0.3.0-26dfe8?style=flat-square&labelColor=14041b)
+[![license](https://img.shields.io/badge/license-FSL--1.1--MIT-8f8095?style=flat-square&labelColor=14041b)](LICENSE)
 
 Studio Engine generates shaders, sound, and motion as replayable creative worlds. A single expression algebra drives everything: each field ships as a WebGL fragment shader for the eye, a portable Web-Audio synth graph for the ear, and a motion timeline with time as a first-class axis. It runs on Python 3.10+ with zero third-party dependencies, exposing a CLI, a local HTTP API, and a reference browser chamber that compiles the shipped GLSL live. Every world writes a receipt you can re-check.
 
@@ -135,7 +135,7 @@ Generated art is usually a dead end: pixels with no structure a person or a late
 
 ## Scope and maturity
 
-This is a 0.2.0 engine, not a finished product. It emits render programs and evidence packets; browsers, GPUs, and audio hosts realize them. The immersive chamber is the frontend's build, from `handoff/`. The dependency-free native GPU renderer is a separate project that this engine bridges to optionally. APIs may still move before 1.0.
+This is a 0.3.0 engine, not a finished product. It emits render programs and evidence packets; browsers, GPUs, and audio hosts realize them. The immersive chamber is the frontend's build, from `handoff/`. The dependency-free native GPU renderer is a separate project that this engine bridges to optionally. APIs may still move before 1.0.
 
 ## Docs and related projects
 
@@ -158,7 +158,7 @@ See [AGENTS.md](AGENTS.md) for the repo operating boundary and [CHANGELOG.md](CH
 
 ## License
 
-AGPL-3.0-or-later, dual-license ready: the author retains copyright and commercial licenses are available.
+From v0.3.0, code is licensed FSL-1.1-MIT. Earlier releases remain under AGPL-3.0-or-later. FSL-1.1-MIT is the Functional Source License, Version 1.1, with MIT as the future licence: each release becomes available under MIT two years after it is made available. See [LICENSE](LICENSE). Every commit in this repository is by the author, who retains copyright; other terms are available from the author.
 
 **Zain Dana Harper**, small tools with explicit edges. Built with Claude Code; reviewed, tested, owned.
 

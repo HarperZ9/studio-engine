@@ -47,5 +47,5 @@ This is the **engine that FEEDS the chamber**. The dependency-free **native GPU 
 is your realization of an immersive room over the engine's grounded stream. Don't claim the unbuilt.
 
 ---
-Repo: `github.com/HarperZ9/studio-engine` · License: **AGPL-3.0** (don't relicense; commercial terms
-via the author) · Tests: `python -m unittest discover -s tests` (111, green).
+Repo: `github.com/HarperZ9/studio-engine` · License: **FSL-1.1-MIT** from v0.3.0, earlier releases AGPL-3.0-or-later
+(relicensed by the author on 4 October 2026; other terms via the author) · Tests: `python -m unittest discover -s tests` (111, green).
