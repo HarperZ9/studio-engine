@@ -134,6 +134,12 @@ handoff/                  frontend package: INTEGRATION.md, types.ts, openapi.js
 showcase/                 static showcase with its own fixtures and Node tests
 ```
 
+## See it work, step by step
+
+The [animated explainer](https://harperz9.github.io/repo-explainers/studio-engine.html)
+walks through a gyroid refined over eight steps, the outside certificate, one expression as shader, timeline and synth, PNG frames and a refused tampered program, and how the novelty corpus changes a rerun. Every value on it is output from this repository. Its
+source is [docs/explainer/index.html](docs/explainer/index.html).
+
 ## Why it matters
 
 Generated art is usually a dead end: pixels with no structure a person or a later program can inspect. Studio Engine keeps the shader program, sound graph, motion timeline, criteria, and receipt together, so a generated world can be re-rendered, steered, and checked instead of admired once and lost.
