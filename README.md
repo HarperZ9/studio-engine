@@ -140,6 +140,39 @@ The [animated explainer](https://harperz9.github.io/repo-explainers/studio-engin
 walks through a gyroid refined over eight steps, the outside certificate, one expression as shader, timeline and synth, PNG frames and a refused tampered program, and how the novelty corpus changes a rerun. Every value on it is output from this repository. Its
 source is [docs/explainer/index.html](docs/explainer/index.html).
 
+## Watch
+
+No concept film fits this tool closely yet. The walkthrough below covers it in text, with real commands and output.
+
+Video walkthrough: coming with the next release.
+
+## Walkthrough
+
+Install it, run it once, then use the main feature. Each command below is real, and so is its output.
+
+1. **Get it.** Clone it. Python 3.10 or newer, no install step.
+
+   ```text
+   $ git clone https://github.com/HarperZ9/studio-engine && cd studio-engine
+   ```
+
+2. **First run: a world with frames.** Generate the gyroid at seed 7 and render PNG frames with no GPU.
+
+   ```text
+   $ python -m studio_engine --render-frames 7 gyroid
+   world 1e1312cf579e9deb | 'Gyroid #7'
+     steps=8 converged=False final_score=0.8922
+     render=glsl-fragment expr_sha=528f4a81a82a6ea2
+     timeline period=0.628319 continuity=verified
+     rendered 8 PNG frame(s) -> studio-out/frames-7/ (+ frames.json)
+   ```
+
+3. **Open the chamber.** Start the API, then open `handoff/reference-chamber.html` to see the shader and hear the synth.
+
+   ```text
+   $ python -m studio_engine.server 8777
+   ```
+
 ## Why it matters
 
 Generated art is usually a dead end: pixels with no structure a person or a later program can inspect. Studio Engine keeps the shader program, sound graph, motion timeline, criteria, and receipt together, so a generated world can be re-rendered, steered, and checked instead of admired once and lost.
