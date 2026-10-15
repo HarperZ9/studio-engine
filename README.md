@@ -140,12 +140,6 @@ The [animated explainer](https://harperz9.github.io/repo-explainers/studio-engin
 walks through a gyroid refined over eight steps, the outside certificate, one expression as shader, timeline and synth, PNG frames and a refused tampered program, and how the novelty corpus changes a rerun. Every value on it is output from this repository. Its
 source is [docs/explainer/index.html](docs/explainer/index.html).
 
-## Watch
-
-No concept film fits this tool closely yet. The walkthrough below covers it in text, with real commands and output.
-
-Video walkthrough: coming with the next release.
-
 ## Walkthrough
 
 Install it, run it once, then use the main feature. Each command below is real, and so is its output.
