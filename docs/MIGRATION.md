@@ -12,11 +12,11 @@ studio-engine is deprecated. It dates from the period when Telos was the only fl
 | [superstack](https://github.com/HarperZ9/superstack) | The shared contract for renderers and sound engines: canonical bytes, seed rule, receipts. |
 | [The Shared Frame](https://harperz9.github.io/shared-frame/) and the [Retro Engine](https://harperz9.github.io/retro.html) | Browser surfaces on the main site. The Shared Frame descends from `showcase/`. The Retro Engine is the GLSL preset library and live shader runner. |
 
-I found no repository named for a shader suite. The closest matches are the Retro Engine's preset library and runner on the main site and the raw-native renderer. Neither is a port of the strand expression algebra. Correct this table if the shader suite lives somewhere else.
+The closest matches for a shader suite are the Retro Engine's preset library and runner on the main site and the raw-native renderer. Both are separate code from the strand expression algebra. Correct this table if a shader suite repository turns up.
 
 ## Feature map
 
-Status values: migrated (a working equivalent exists elsewhere), partly migrated (some of the feature exists), missing (no equivalent outside this repository). This survey compared module names, generator ids and public behavior. It did not run the two engines against each other, so "migrated" means present. Output parity stays unverified until the golden-vector step below.
+Status values: migrated (a working equivalent exists elsewhere), partly migrated (some of the feature exists), missing (the feature lives in this repository alone). This survey compared module names, generator ids and public behavior, so "migrated" means present. Output parity gets its check in the golden-vector step below, which is still to run.
 
 | Feature in studio-engine | Status | Where it lives now | Gap |
 |---|---|---|---|
@@ -41,7 +41,7 @@ Status values: migrated (a working equivalent exists elsewhere), partly migrated
 
 ## Plan for what is missing
 
-No code is written yet. Each item names a target, an acceptance check and, where one exists, an open question.
+This is a plan; the code comes next. Each item names a target, an acceptance check and, where one exists, an open question.
 
 ### 1. Audio program emitter
 
@@ -69,7 +69,7 @@ Add the composite action and a play button to reconcile's browser page once item
 
 ### 5. HTTP API
 
-Decide before building anything. No consumer of `handoff/openapi.json` is known. If none turns up, drop the API and keep `handoff/types.ts` and the example payloads as the world schema in reconcile. If a consumer exists, put a thin Node server in reconcile that reuses item 3's stepper.
+Decide this first. A consumer of `handoff/openapi.json` is still to be found. If one exists, put a thin Node server in reconcile that reuses item 3's stepper. Otherwise drop the API and keep `handoff/types.ts` and the example payloads as the world schema in reconcile.
 
 Open question for the author: does any outside consumer depend on the API?
 
@@ -79,7 +79,7 @@ Before any port is declared done, copy `handoff/examples/*.json` and the unit-te
 
 ### 7. Native bridge
 
-Keep `native_render.py` as a reference for the channel-certificate format. Port it only when raw-native gains a parameterized loop that something calls. Low priority.
+Keep `native_render.py` as a reference for the channel-certificate format. Port it once raw-native gains a parameterized loop that something calls. Low priority.
 
 ## What retiring this repository needs
 
@@ -87,4 +87,4 @@ Keep `native_render.py` as a reference for the channel-certificate format. Port 
 2. The main site's studio-engine explainer and the Shared Frame README carry a deprecation line pointing here.
 3. The author agrees to archive.
 
-Until then this repository receives no new features.
+Until then this repository takes fixes and migration work.

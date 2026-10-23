@@ -7,8 +7,7 @@ loop and hands back a self-describing World: a WebGL fragment shader for the eye
 a Web-Audio synth graph for the ear, a motion timeline with time as a first-class
 axis, an SVG preview, and the full trajectory of how it got there.
 
-It runs on Python 3.10+ from a plain checkout, no pip install and no third-party
-packages. The surfaces are a CLI, a local HTTP API, and two runnable browser
+It runs on Python 3.10+ straight from a checkout, on the standard library. The surfaces are a CLI, a local HTTP API, and two runnable browser
 chambers shipped in `handoff/`.
 
 ## Why it exists
@@ -65,11 +64,11 @@ render, and the expression or recipe. Adding one means writing one expression.
 - **Browser**: `handoff/reference-chamber.html` compiles the shipped GLSL live
   and plays the synth graph.
 - **Headless**: `studio_engine/raster_renderer.py` is a software rasterizer that
-  turns the same render program into deterministic PNG files, no GPU and no
-  dependencies. It re-hashes the shipped AST first and refuses to render on a
-  mismatch.
+  turns the same render program into deterministic PNG files on the CPU. It
+  re-hashes the shipped AST first and renders when the hash matches.
 - **Native (optional)**: `studio_engine/native_render.py` bridges to a separate
-  native C++ CLI when one is built and reports honestly when it is not.
+  native C++ CLI when one is built, and reports in its output whether it found
+  one.
 
 ## Your first ten minutes
 
@@ -111,8 +110,8 @@ composites, and plays audio.
 Open `handoff/watch-it-think.html` with the server still running. It subscribes
 to `GET /simulate/stream` (Server-Sent Events) and plots per-axis criterion
 margins as the loop converges, weakest axis highlighted. Move a slider to steer
-a parameter mid-run: values outside the generator's bounds come back as visible
-rejections, never silently clamped in.
+a parameter mid-run: a value outside the generator's bounds is clamped, and the
+step reports it under `rejected` with your value beside the clamped one.
 
 **5. Try the other generators.**
 

@@ -171,12 +171,12 @@ ol.walkthrough p{margin:0 0 .3rem;max-width:44rem}
 <section class="block wrap" aria-labelledby="for-you">
   <h2 id="for-you">What it does for you</h2>
   <div class="measure">
-    <p>Generated art usually ends as pixels nobody can inspect. studio-engine keeps the whole recipe: the shader, a sound graph, a motion timeline, the criteria it was judged against, every refinement step and a receipt. You can re-render it, steer it over a local HTTP API, or render PNG frames with no GPU. It runs on the Python standard library alone.</p>
+    <p>studio-engine keeps the whole recipe behind a generated artwork: the shader, a sound graph, a motion timeline, the criteria it was judged against, every refinement step and a receipt. You can re-render it, steer it over a local HTTP API, or render PNG frames on the CPU. It runs on the Python standard library alone.</p>
   </div>
   <ul class="uses">
     <li><b>One expression, every output</b>The same formula becomes the GLSL shader, the scored samples, the timeline and the synth graph.</li>
-    <li><b>Frames without a GPU</b>A software rasterizer writes deterministic PNG frames, each hashed into the receipt.</li>
-    <li><b>Tampering is refused</b>The rasterizer re-hashes the shipped expression and will not draw a mismatch.</li>
+    <li><b>Frames on the CPU</b>A software rasterizer writes deterministic PNG frames, each hashed into the receipt.</li>
+    <li><b>Tampering is refused</b>The rasterizer re-hashes the shipped expression and draws it when the hash matches the receipt.</li>
     <li><b>Ten generators</b>Seven fields and three point sets, each one table entry.</li>
   </ul>
   <p class="src">Source: <a href="https://github.com/HarperZ9/studio-engine/blob/24cd0f4c59a1c3007f94904f74f69af689546b50/README.md">README.md</a> at 24cd0f4 (version 0.3.0)</p>
@@ -241,9 +241,9 @@ ol.walkthrough p{margin:0 0 .3rem;max-width:44rem}
   <h2 id="walkthrough">Walkthrough</h2>
   <p class="measure">Install it, run it once, then use the main feature. Each command below is real, and so is its output.</p>
   <ol class="walkthrough">
-    <li><h3>Get it</h3><p>Clone it. Python 3.10 or newer, no install step.</p>
+    <li><h3>Get it</h3><p>Clone it and run it with Python 3.10 or newer.</p>
 <pre class="cmd"><code>$ git clone https://github.com/HarperZ9/studio-engine && cd studio-engine</code></pre></li>
-    <li><h3>First run: a world with frames</h3><p>Generate the gyroid at seed 7 and render PNG frames with no GPU.</p>
+    <li><h3>First run: a world with frames</h3><p>Generate the gyroid at seed 7 and render PNG frames on the CPU.</p>
 <pre class="cmd"><code>$ python -m studio_engine --render-frames 7 gyroid
 <span class="out">world 1e1312cf579e9deb | 'Gyroid #7'
   steps=8 converged=False final_score=0.8922
@@ -257,9 +257,9 @@ ol.walkthrough p{margin:0 0 .3rem;max-width:44rem}
 </section>
 
 <section class="block wrap" aria-labelledby="limits">
-  <h2 id="limits">What it does not do</h2>
+  <h2 id="limits">Limits</h2>
   <ul class="limits">
-    <li>The criteria are coarse aesthetic axes. A score is a measured read of them and makes no claim about beauty.</li>
+    <li>The criteria are coarse aesthetic axes. A score is a measured read of them; beauty is for you to judge.</li>
     <li>The engine emits shader programs and synth graphs as data. Browsers, GPUs and audio hosts play them.</li>
     <li>Version 0.3.0; the API may still change before 1.0. The native GPU renderer is a separate project, and the bridge says so when it is absent.</li>
   </ul>
