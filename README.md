@@ -7,6 +7,8 @@
 
 Generate replayable shaders, sound and motion from a seed, in plain Python.
 
+> **Deprecated.** This engine dates from when Telos was the only flagship. Its generators, expression algebra, refine loop, compositor and timeline now live in [reconcile](https://github.com/HarperZ9/reconcile), which runs in Node and the browser. Sound generation and raster kernels are in [telos](https://github.com/HarperZ9/telos), and native rendering is in [raw-native](https://github.com/HarperZ9/raw-native). The audio emitter, the frame rasterizer and the live trajectory view have not moved yet. [docs/MIGRATION.md](docs/MIGRATION.md) maps every feature and plans the rest. The repository stays up and gets no new features.
+
 [![version: 0.3.0](https://img.shields.io/badge/version-0.3.0-e6e1d6?style=flat-square&labelColor=1a1712)](https://github.com/HarperZ9/studio-engine/releases/latest)
 [![CI](https://github.com/HarperZ9/studio-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/HarperZ9/studio-engine/actions/workflows/ci.yml)
 [![license](https://img.shields.io/badge/license-FSL--1.1--MIT-e6e1d6?style=flat-square&labelColor=1a1712)](https://github.com/HarperZ9/studio-engine/blob/main/LICENSE)
