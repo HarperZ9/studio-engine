@@ -18,7 +18,7 @@ Everything is saved as JSON with SHA-256 hashes of the outputs, so you can rebui
 
 It suits creative coders who want seeded, scriptable shader and sound output from Python, and front-end developers who want a small local API that hands back ready-to-compile GLSL.
 
-## Quickstart
+## Try it
 
 No install step. From a clone:
 
@@ -175,9 +175,9 @@ Each command below was run on a fresh clone, and the output is what it printed.
    $ python -m studio_engine.server 8777
    ```
 
-## What a world records
+## Why it matters
 
-A world keeps the shader program, sound graph, motion timeline and scoring rules together, so you can re-render it, steer it, or check it later.
+Most generated art ends as pixels with nothing left to inspect. studio-engine makes replayable creative worlds: each one keeps its shader program, sound graph, motion timeline and scoring rules together, so you can re-render it, steer it, or check it later.
 
 `(seed, generator, scheme)` determines a world for a fixed novelty record: same input, same id and SHA-256 hashes. Every world carries each tuning step, the scoring rules it was judged against, and a `receipt` block whose hashes cover the JSON, the audio, and any rendered frames.
 
